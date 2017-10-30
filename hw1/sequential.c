@@ -7,20 +7,20 @@ int main(int argc, char* argv[]){
     start = clock();
     long long int number_of_tosses = atoi(argv[2]);
 
-    int number_in_circle = 0;
-    double x, y, distance_squared, pi_estimate;
+    long long int number_in_circle = 0;
+    long double x, y, distance_squared, pi_estimate;
     srand(time(NULL));
     for( long long int toss = 0; toss < number_of_tosses; toss++ ){
-        x = (double)rand()/RAND_MAX*2.0 - 1.0;
-        y = (double)rand()/RAND_MAX*2.0 - 1.0;
+        x = (long double)rand()/RAND_MAX*2.0 - 1.0;
+        y = (long double)rand()/RAND_MAX*2.0 - 1.0;
         distance_squared = x*x + y*y;
         if( distance_squared <= 1.0 ){
             number_in_circle++;
         }
     }
-    
-    pi_estimate = 4 * number_in_circle / ((double)number_of_tosses);
-    printf("PI: %f\n", pi_estimate);
+
+    pi_estimate = 4 * number_in_circle / ((long double)number_of_tosses);
+    printf("PI: %Lf\n", pi_estimate);
     end = clock();
 
     double cpu_time_used = ((double)(end-start)) / CLOCKS_PER_SEC;
