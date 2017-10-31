@@ -70,6 +70,7 @@ void* thread_toss(void* rank){
     pthread_mutex_lock(&mutex);
     number_in_circle += tmp_sum;
     pthread_mutex_unlock(&mutex);
+    // pthread_exit(NULL);
 
     return NULL;
 }
