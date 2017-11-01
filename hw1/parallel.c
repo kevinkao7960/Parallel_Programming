@@ -10,6 +10,12 @@ pthread_mutex_t mutex;
 
 void* thread_toss(void* rank);
 int main(int argc, char* argv[]){
+    if( argc != 3 ){
+        fprintf(stderr, "you should put another two arguments!\n");
+        exit(1);
+    }
+
+
     // calculate the program time
     clock_t start, end;
     
