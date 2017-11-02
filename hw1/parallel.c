@@ -18,7 +18,6 @@ int main(int argc, char* argv[]){
 
 
     // calculate the program time
-    // clock_t start, end;
     struct timeval t1,t2;
 
 
@@ -35,7 +34,7 @@ int main(int argc, char* argv[]){
     thread_toss_num = number_of_tosses / thread_count;
 
     thread_handles = (pthread_t*)malloc(sizeof(pthread_t) * thread_count);
-    // start = clock();
+
     gettimeofday(&t1, NULL);
 
     for( thread = 0; thread < thread_count; thread++ ){
@@ -46,7 +45,7 @@ int main(int argc, char* argv[]){
     for( thread = 0; thread < thread_count; thread++ ){
         pthread_join(thread_handles[thread], NULL);
     }
-    // end = clock();
+
     gettimeofday(&t2, NULL);
 
     pthread_mutex_destroy(&mutex);
@@ -61,10 +60,8 @@ int main(int argc, char* argv[]){
     double elapsed_time = (t2.tv_sec - t1.tv_sec) * 1000;
     elapsed_time += (t2.tv_usec - t1.tv_usec) / 1000;
 
-    // double cpu_time_used = ((double)(end-start)) / CLOCKS_PER_SEC;
     double cpu_time_used = elapsed_time / 1000;
     printf("CPU Time: %lf\n", cpu_time_used);
-
 
     return 0;
 }
@@ -72,7 +69,6 @@ int main(int argc, char* argv[]){
 void* thread_toss(void* rank){
     long long int i;
     double x, y;
-    // long long int my_n = number_of_tosses / thread_count;
     long long int tmp_sum = 0;
 
     for( i = 0; i < thread_toss_num; i++ ){
