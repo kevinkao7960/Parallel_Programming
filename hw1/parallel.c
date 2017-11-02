@@ -18,7 +18,7 @@ int main(int argc, char* argv[]){
 
     // calculate the program time
     clock_t start, end;
-    
+
     srand(time(NULL));
 
     // mutex initialize
@@ -49,13 +49,12 @@ int main(int argc, char* argv[]){
     long double pi_estimate;
     pi_estimate = 4 * number_in_circle / ((long double)number_of_tosses);
 
-    
+
 
     printf("PI: %Lf\n", pi_estimate);
     double cpu_time_used = ((double)(end-start)) / CLOCKS_PER_SEC;
     printf("CPU Time: %f\n", cpu_time_used);
 
-    
 
     return 0;
 }
@@ -79,7 +78,6 @@ void* thread_toss(void* rank){
     pthread_mutex_lock(&mutex);
     number_in_circle += tmp_sum;
     pthread_mutex_unlock(&mutex);
-    // pthread_exit(NULL);
 
     return NULL;
 }
