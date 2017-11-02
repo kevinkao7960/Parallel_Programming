@@ -41,12 +41,13 @@ int main(int argc, char* argv[]){
     // wait for thread join to main thread
     for( thread = 0; thread < thread_count; thread++ ){
         pthread_join(thread_handles[thread], &status);
-        number_in_circle += (long long int)status;
+        number_in_circle += *((long long int*)status);
     }
     end = clock();
 
     pthread_mutex_destroy(&mutex);
     free(thread_handles);
+    free(status);
     // calculate pi
     long double pi_estimate;
     pi_estimate = 4 * number_in_circle / ((long double)number_of_tosses);
@@ -65,14 +66,14 @@ void* thread_toss(void* rank){
     long long int i;
     double x, y, distance_squared;
     // long long int my_n = number_of_tosses / thread_count;
-    long long int tmp_sum = 0;
+    long long int* tmp_sum;
 
     for( i = 0; i < thread_toss_num; i++ ){
         x = (double)rand()/RAND_MAX*2.0 - 1.0;
         y = (double)rand()/RAND_MAX*2.0 - 1.0;
         distance_squared = x*x + y*y;
         if( distance_squared <= 1.0 ){
-            tmp_sum++;
+            (*tmp_sum)++;
         }
     }
 
