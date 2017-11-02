@@ -61,15 +61,15 @@ int main(int argc, char* argv[]){
 
 void* thread_toss(void* rank){
     long long int i;
-    double x, y, distance_squared;
+    double x, y;
     // long long int my_n = number_of_tosses / thread_count;
     long long int tmp_sum = 0;
 
     for( i = 0; i < thread_toss_num; i++ ){
         x = (double)rand()/RAND_MAX*2.0 - 1.0;
         y = (double)rand()/RAND_MAX*2.0 - 1.0;
-        distance_squared = x*x + y*y;
-        if( distance_squared <= 1.0 ){
+        // distance_squared = x*x + y*y;
+        if( (x*x + y*y) <= 1.0 ){
             tmp_sum++;
         }
     }
