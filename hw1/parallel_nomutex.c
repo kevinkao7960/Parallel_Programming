@@ -7,6 +7,7 @@
 long long int thread_count;
 long long int number_in_circle = 0;
 long long int thread_toss_num;
+long long int* partial_sum;
 pthread_mutex_t mutex;
 
 void* thread_toss(void* rank);
@@ -30,20 +31,24 @@ int main(int argc, char* argv[]){
     void* status;
     pthread_t* thread_handles;
     thread_count = atoi(argv[1]);
+    partial_sum = (long long int*)malloc(sizeof(long long int) * thread_count);
+    
     long long int number_of_tosses = atoi(argv[2]);
     thread_toss_num = number_of_tosses / thread_count;
 
     thread_handles = (pthread_t*)malloc(sizeof(pthread_t) * thread_count);
     gettimeofday(&t1, NULL);
     for( thread = 0; thread < thread_count; thread++ ){
-          pthread_create(&thread_handles[thread], NULL, thread_toss, NULL);
+        partial_sum[thread] = 0;
+        pthread_create(&thread_handles[thread], NULL, thread_toss, (void*)thread);
     }
 
     // wait for thread join to main thread
     for( thread = 0; thread < thread_count; thread++ ){
-        pthread_join(thread_handles[thread], &status);
-        number_in_circle += (long long int)status;
+        pthread_join(thread_handles[thread], NULL);
+        number_in_circle += partial_sum[thread];
     }
+
     gettimeofday(&t2, NULL);
 
     pthread_mutex_destroy(&mutex);
@@ -68,6 +73,7 @@ int main(int argc, char* argv[]){
 
 void* thread_toss(void* rank){
     long long int i;
+    long my_rank = (long)rank;
     double x, y, distance_squared;
     // long long int my_n = number_of_tosses / thread_count;
     long long int tmp_sum = 0;
@@ -81,10 +87,6 @@ void* thread_toss(void* rank){
         }
     }
 
-    // mutex for number_in_circle
-    // pthread_mutex_lock(&mutex);
-    // number_in_circle += tmp_sum;
-    // pthread_mutex_unlock(&mutex);
-    pthread_exit((void*)tmp_sum);
+    partial_sum[my_rank] = tmp_sum;
     return NULL;
 }
