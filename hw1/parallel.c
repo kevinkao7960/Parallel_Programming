@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <sys/time.h>
 #include <pthread.h>
 
 long long int thread_count;
@@ -15,12 +13,7 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "you should put another two arguments!\n");
         exit(1);
     }
-
-
-    // calculate the program time
-    struct timeval t1,t2;
-
-
+    
     srand(time(NULL));
 
     // mutex initialize
@@ -35,8 +28,6 @@ int main(int argc, char* argv[]){
 
     thread_handles = (pthread_t*)malloc(sizeof(pthread_t) * thread_count);
 
-    gettimeofday(&t1, NULL);
-
     for( thread = 0; thread < thread_count; thread++ ){
           pthread_create(&thread_handles[thread], NULL, thread_toss, NULL);
     }
@@ -46,22 +37,13 @@ int main(int argc, char* argv[]){
         pthread_join(thread_handles[thread], NULL);
     }
 
-    gettimeofday(&t2, NULL);
-
     pthread_mutex_destroy(&mutex);
     free(thread_handles);
     // calculate pi
     long double pi_estimate;
     pi_estimate = 4 * number_in_circle / ((long double)number_of_tosses);
 
-
-
-    printf("PI: %Lf\n", pi_estimate);
-    double elapsed_time = (t2.tv_sec - t1.tv_sec) * 1000;
-    elapsed_time += (t2.tv_usec - t1.tv_usec) / 1000;
-
-    double cpu_time_used = elapsed_time / 1000;
-    printf("CPU Time: %lf\n", cpu_time_used);
+    printf("%Lf\n", pi_estimate);
 
     return 0;
 }
