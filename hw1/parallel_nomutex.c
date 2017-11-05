@@ -8,7 +8,7 @@ long long int thread_count;
 long long int number_in_circle = 0;
 long long int thread_toss_num;
 long long int* partial_sum;
-pthread_mutex_t mutex;
+// pthread_mutex_t mutex;
 
 void* thread_toss(void* rank);
 int main(int argc, char* argv[]){
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]){
     srand(time(NULL));
 
     // mutex initialize
-    pthread_mutex_init(&mutex, NULL);
+    // pthread_mutex_init(&mutex, NULL);
 
     // thread initialize
     long thread;
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]){
     thread_handles = (pthread_t*)malloc(sizeof(pthread_t) * thread_count);
     gettimeofday(&t1, NULL);
     for( thread = 0; thread < thread_count; thread++ ){
-        partial_sum[thread] = 0;
+        // partial_sum[thread] = 0;
         pthread_create(&thread_handles[thread], NULL, thread_toss, (void*)thread);
     }
 
@@ -51,8 +51,9 @@ int main(int argc, char* argv[]){
 
     gettimeofday(&t2, NULL);
 
-    pthread_mutex_destroy(&mutex);
+    // pthread_mutex_destroy(&mutex);
     free(thread_handles);
+    free(partial_sum);
     free(status);
     // calculate pi
     long double pi_estimate;
