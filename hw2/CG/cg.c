@@ -99,12 +99,8 @@ int main(int argc, char *argv[])
 
   char *t_names[T_last];
 
-  #pragma omp parallel
-  {
-  #pragma omp for
-    for (i = 0; i < T_last; i++) {
-      timer_clear(i);
-    }
+  for (i = 0; i < T_last; i++) {
+    timer_clear(i);
   }
 
   timer_start(T_init);
