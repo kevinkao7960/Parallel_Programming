@@ -145,8 +145,9 @@ int main(int argc, char *argv[])
   //      Shift the col index vals from actual (firstcol --> lastcol )
   //      to local, i.e., (0 --> lastcol-firstcol)
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(j, k)
+  #pragma omp parallel for
   for (j = 0; j < lastrow - firstrow + 1; j++) {
+    #pragma omp parallel for
     for (k = rowstr[j]; k < rowstr[j+1]; k++) {
       colidx[k] = colidx[k] - firstcol;
     }
