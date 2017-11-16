@@ -6,6 +6,7 @@
 #include "randdp.h"
 #include "timers.h"
 
+#include "omp.h"
 //---------------------------------------------------------------------
 /* common / main_int_mem / */
 static int colidx[NZ];
@@ -98,10 +99,14 @@ int main(int argc, char *argv[])
 
   char *t_names[T_last];
 
-  for (i = 0; i < T_last; i++) {
-    timer_clear(i);
+  #pragma omp parallel
+  {
+  #pragma omp for
+    for (i = 0; i < T_last; i++) {
+      timer_clear(i);
+    }
   }
-  
+
   timer_start(T_init);
 
   firstrow = 0;
@@ -110,7 +115,7 @@ int main(int argc, char *argv[])
   lastcol  = NA-1;
 
   zeta_verify_value = VALID_RESULT;
-  
+
   printf("\nCG start...\n\n");
   printf(" Size: %11d\n", NA);
   printf(" Iterations: %5d\n", NITER);
@@ -127,12 +132,12 @@ int main(int argc, char *argv[])
   zeta    = randlc(&tran, amult);
 
   //---------------------------------------------------------------------
-  //  
+  //
   //---------------------------------------------------------------------
-  makea(naa, nzz, a, colidx, rowstr, 
-        firstrow, lastrow, firstcol, lastcol, 
-        arow, 
-        (int (*)[NONZER+1])(void*)acol, 
+  makea(naa, nzz, a, colidx, rowstr,
+        firstrow, lastrow, firstcol, lastcol,
+        arow,
+        (int (*)[NONZER+1])(void*)acol,
         (double (*)[NONZER+1])(void*)aelt,
         iv);
 
@@ -141,7 +146,7 @@ int main(int argc, char *argv[])
   //      values of j used in indexing rowstr go from 0 --> lastrow-firstrow
   //      values of colidx which are col indexes go from firstcol --> lastcol
   //      So:
-  //      Shift the col index vals from actual (firstcol --> lastcol ) 
+  //      Shift the col index vals from actual (firstcol --> lastcol )
   //      to local, i.e., (0 --> lastcol-firstcol)
   //---------------------------------------------------------------------
   for (j = 0; j < lastrow - firstrow + 1; j++) {
@@ -194,7 +199,7 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
-    for (j = 0; j < lastcol - firstcol + 1; j++) {     
+    for (j = 0; j < lastcol - firstcol + 1; j++) {
       x[j] = norm_temp2 * z[j];
     }
   } // end of do one iteration untimed
@@ -244,7 +249,7 @@ int main(int argc, char *argv[])
     norm_temp2 = 1.0 / sqrt(norm_temp2);
 
     zeta = SHIFT + 1.0 / norm_temp1;
-    if (it == 1) 
+    if (it == 1)
       printf("\n   iteration           ||r||                 zeta\n");
     printf("    %5d       %20.14E%20.13f\n", it, rnorm, zeta);
 
@@ -279,15 +284,15 @@ int main(int argc, char *argv[])
     printf(" Zeta                %20.13E\n", zeta);
     printf(" The correct zeta is %20.13E\n", zeta_verify_value);
   }
-  
+
   printf("\n\nExecution time : %lf seconds\n\n", t);
-  
+
   return 0;
 }
 
 
 //---------------------------------------------------------------------
-// Floaging point arrays here are named as in spec discussion of 
+// Floaging point arrays here are named as in spec discussion of
 // CG algorithm
 //---------------------------------------------------------------------
 static void conj_grad(int colidx[],
@@ -335,10 +340,10 @@ static void conj_grad(int colidx[],
     // The partition submatrix-vector multiply: use workspace w
     //---------------------------------------------------------------------
     //
-    // NOTE: this version of the multiply is actually (slightly: maybe %5) 
-    //       faster on the sp2 on 16 nodes than is the unrolled-by-2 version 
-    //       below.   On the Cray t3d, the reverse is true, i.e., the 
-    //       unrolled-by-two version is some 10% faster.  
+    // NOTE: this version of the multiply is actually (slightly: maybe %5)
+    //       faster on the sp2 on 16 nodes than is the unrolled-by-2 version
+    //       below.   On the Cray t3d, the reverse is true, i.e., the
+    //       unrolled-by-two version is some 10% faster.
     //       The unrolled-by-8 version below is significantly faster
     //       on the Cray t3d - overall speed of code is 1.5 times faster.
 
@@ -374,10 +379,10 @@ static void conj_grad(int colidx[],
     //---------------------------------------------------------------------
     rho = 0.0;
     for (j = 0; j < lastcol - firstcol + 1; j++) {
-      z[j] = z[j] + alpha*p[j];  
+      z[j] = z[j] + alpha*p[j];
       r[j] = r[j] - alpha*q[j];
     }
-            
+
     //---------------------------------------------------------------------
     // rho = r.r
     // Now, obtain the norm of r: First, sum squares of r elements locally...
@@ -488,7 +493,7 @@ static void makea(int n,
     sprnvc(n, nzv, nn1, vc, ivc);
     vecset(n, vc, ivc, &nzv, iouter+1, 0.5);
     arow[iouter] = nzv;
-    
+
     for (ivelt = 0; ivelt < nzv; ivelt++) {
       acol[iouter][ivelt] = ivc[ivelt] - 1;
       aelt[iouter][ivelt] = vc[ivelt];
@@ -499,7 +504,7 @@ static void makea(int n,
   // ... make the sparse matrix from list of elements with duplicates
   //     (iv is used as  workspace)
   //---------------------------------------------------------------------
-  sparse(a, colidx, rowstr, n, nz, NONZER, arow, acol, 
+  sparse(a, colidx, rowstr, n, nz, NONZER, arow, acol,
          aelt, firstrow, lastrow,
          iv, RCOND, SHIFT);
 }
@@ -745,4 +750,3 @@ static void vecset(int n, double v[], int iv[], int *nzv, int i, double val)
     *nzv     = *nzv + 1;
   }
 }
-
