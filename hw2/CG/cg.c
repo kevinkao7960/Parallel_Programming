@@ -337,7 +337,6 @@ static void conj_grad(int colidx[],
   // The conj grad iteration loop
   //---->
   //---------------------------------------------------------------------
-  #pragma omp parallel for
   for (cgit = 1; cgit <= cgitmax; cgit++) {
     //---------------------------------------------------------------------
     // q = A.p
