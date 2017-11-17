@@ -393,10 +393,15 @@ static void conj_grad(int colidx[],
     // and    r = r - alpha*q
     //---------------------------------------------------------------------
     rho = 0.0;
-    #pragma omp parallel for reduction(+:rho)
+    #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       z[j] = z[j] + alpha*p[j];
       r[j] = r[j] - alpha*q[j];
+      // rho = rho + r[j]*r[j];
+    }
+
+    #pragma omp parallel for reduction(+:rho)
+    for(j = 0; j< lastcol - firstcol + 1; j++ ){
       rho = rho + r[j]*r[j];
     }
 
@@ -515,7 +520,6 @@ static void makea(int n,
     sprnvc(n, nzv, nn1, vc, ivc);
     vecset(n, vc, ivc, &nzv, iouter+1, 0.5);
     arow[iouter] = nzv;
-
     for (ivelt = 0; ivelt < nzv; ivelt++) {
       acol[iouter][ivelt] = ivc[ivelt] - 1;
       aelt[iouter][ivelt] = vc[ivelt];
