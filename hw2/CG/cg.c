@@ -190,11 +190,21 @@ int main(int argc, char *argv[])
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
 
-    #pragma omp parallel for reduction (+:norm_temp1, norm_temp2)
+  #pragma omp parallel
+  {
+    #pragma omp for reduction (+:norm_temp1)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       norm_temp1 = norm_temp1 + x[j] * z[j];
+      // norm_temp2 = norm_temp2 + z[j] * z[j];
+    }
+
+    #pragma omp for reduction (+:norm_temp2)
+    for(j = 0; j < lastcol - firstcol + 1; j++) {
       norm_temp2 = norm_temp2 + z[j] * z[j];
     }
+  }
+
+
 
     norm_temp2 = 1.0 / sqrt(norm_temp2);
 
