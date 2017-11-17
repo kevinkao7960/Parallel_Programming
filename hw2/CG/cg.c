@@ -352,7 +352,7 @@ static void conj_grad(int colidx[],
   // #pragma omp parallel
   // {
   // #pragma omp for private(j, k)
-    #pragma omp for private (j,k,sum)
+    #pragma omp parallel for private (j,k,sum)
     for (j = 0; j < lastrow - firstrow + 1; j++) {
       sum = 0.0;
       for (k = rowstr[j]; k < rowstr[j+1]; k++) {
