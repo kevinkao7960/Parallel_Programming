@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
   //      Shift the col index vals from actual (firstcol --> lastcol )
   //      to local, i.e., (0 --> lastcol-firstcol)
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(j, k)
+  // #pragma omp parallel for private(j, k)
   for (j = 0; j < lastrow - firstrow + 1; j++) {
     for (k = rowstr[j]; k < rowstr[j+1]; k++) {
       colidx[k] = colidx[k] - firstcol;
@@ -269,7 +269,6 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
-    #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       x[j] = norm_temp2 * z[j];
     }
@@ -360,7 +359,7 @@ static void conj_grad(int colidx[],
     //       unrolled-by-two version is some 10% faster.
     //       The unrolled-by-8 version below is significantly faster
     //       on the Cray t3d - overall speed of code is 1.5 times faster.
-    #pragma omp parallel for private (j,k,sum)
+    // #pragma omp parallel for private (j,k,sum)
     for (j = 0; j < lastrow - firstrow + 1; j++) {
       sum = 0.0;
       for (k = rowstr[j]; k < rowstr[j+1]; k++) {
@@ -397,7 +396,6 @@ static void conj_grad(int colidx[],
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       z[j] = z[j] + alpha*p[j];
       r[j] = r[j] - alpha*q[j];
-      rho = rho + r[j]*r[j];
     }
 
 
@@ -405,7 +403,10 @@ static void conj_grad(int colidx[],
     // rho = r.r
     // Now, obtain the norm of r: First, sum squares of r elements locally...
     //---------------------------------------------------------------------
-
+    #pragma omp parallel for reduction (+:rho)
+    for (j = 0; j < lastcol - firstcol + 1; j++) {
+      rho = rho + r[j]*r[j];
+    }
     //---------------------------------------------------------------------
     // Obtain beta:
     //---------------------------------------------------------------------
