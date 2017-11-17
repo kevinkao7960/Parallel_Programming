@@ -175,6 +175,7 @@ int main(int argc, char *argv[])
   //---------------------------------------------------------------------
 #pragma omp parallel
 {
+  #pragma omp for
   for (it = 1; it <= 1; it++) {
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
