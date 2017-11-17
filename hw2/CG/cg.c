@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
   //      Shift the col index vals from actual (firstcol --> lastcol )
   //      to local, i.e., (0 --> lastcol-firstcol)
   //---------------------------------------------------------------------
-  // #pragma omp parallel for private(j, k)
+  #pragma omp parallel for private(j, k)
   for (j = 0; j < lastrow - firstrow + 1; j++) {
     for (k = rowstr[j]; k < rowstr[j+1]; k++) {
       colidx[k] = colidx[k] - firstcol;
@@ -359,7 +359,7 @@ static void conj_grad(int colidx[],
     //       unrolled-by-two version is some 10% faster.
     //       The unrolled-by-8 version below is significantly faster
     //       on the Cray t3d - overall speed of code is 1.5 times faster.
-    // #pragma omp parallel for private (j,k,sum)
+    #pragma omp parallel for private (j,k,sum)
     for (j = 0; j < lastrow - firstrow + 1; j++) {
       sum = 0.0;
       for (k = rowstr[j]; k < rowstr[j+1]; k++) {
