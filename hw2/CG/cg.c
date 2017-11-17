@@ -231,18 +231,19 @@ int main(int argc, char *argv[])
 
   //---------------------------------------------------------------------
   //---->
-  // Main Iteration for inverse power method
+  // Main Iteration for inverse power methodf
   //---->
   //---------------------------------------------------------------------
-#pragma omp parallel
-{
-  #pragma omp for ordered private(it)
+  double tmp;
+  #pragma omp parallel for ordered private(it, tmp)
   for (it = 1; it <= NITER; it++) {
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
     //---------------------------------------------------------------------
+    tmp = 0;
     if (timeron) timer_start(T_conj_grad);
-    conj_grad(colidx, rowstr, x, z, a, p, q, r, &rnorm);
+    // conj_grad(colidx, rowstr, x, z, a, p, q, r, &rnorm);
+    conj_grad(colidx, rowstr, x, z, a, p, q, r, &tmp);
     if (timeron) timer_stop(T_conj_grad);
 
     //---------------------------------------------------------------------
@@ -269,7 +270,8 @@ int main(int argc, char *argv[])
     if (it == 1)
       printf("\n   iteration           ||r||                 zeta\n");
   #pragma omp ordered
-    printf("    %5d       %20.14E%20.13f\n", it, rnorm, zeta);
+    printf("    %5d       %20.14E%20.13f\n", it, tmp, zeta);
+    // printf("    %5d       %20.14E%20.13f\n", it, rnorm, zeta);
 
     //---------------------------------------------------------------------
     // Normalize z to obtain x
@@ -279,7 +281,7 @@ int main(int argc, char *argv[])
       x[j] = norm_temp2 * z[j];
     }
   } // end of main iter inv pow meth
-}
+// }
   timer_stop(T_bench);
 
   //---------------------------------------------------------------------
