@@ -204,8 +204,6 @@ int main(int argc, char *argv[])
     }
   }
 
-
-
     norm_temp2 = 1.0 / sqrt(norm_temp2);
 
     //---------------------------------------------------------------------
@@ -215,9 +213,6 @@ int main(int argc, char *argv[])
       x[j] = norm_temp2 * z[j];
     }
   } // end of do one iteration untimed
-
-
-
 
   //---------------------------------------------------------------------
   // set starting vector to (1, 1, .... 1)
@@ -239,6 +234,7 @@ int main(int argc, char *argv[])
   // Main Iteration for inverse power method
   //---->
   //---------------------------------------------------------------------
+  #pragma omp parallel for private(norm_temp1, norm_temp2, it)
   for (it = 1; it <= NITER; it++) {
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
