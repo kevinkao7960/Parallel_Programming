@@ -173,14 +173,12 @@ int main(int argc, char *argv[])
   // Do one iteration untimed to init all code and data page tables
   //---->                    (then reinit, start timing, to niter its)
   //---------------------------------------------------------------------
-#pragma omp parallel
-{
-  #pragma omp for
+
   for (it = 1; it <= 1; it++) {
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
     //---------------------------------------------------------------------
-  #pragma omp single
+
     conj_grad(colidx, rowstr, x, z, a, p, q, r, &rnorm);
 
     //---------------------------------------------------------------------
@@ -189,28 +187,25 @@ int main(int argc, char *argv[])
     // Also, find norm of z
     // So, first: (z.z)
     //---------------------------------------------------------------------
-  #pragma omp single
     norm_temp1 = 0.0;
-  #pragma omp single
     norm_temp2 = 0.0;
 
-    #pragma omp for reduction (+:norm_temp1, norm_temp2)
+    #pragma omp parallel for reduction (+:norm_temp1, norm_temp2)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       norm_temp1 = norm_temp1 + x[j] * z[j];
       norm_temp2 = norm_temp2 + z[j] * z[j];
     }
-#pragma omp single
+
     norm_temp2 = 1.0 / sqrt(norm_temp2);
 
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
-#pragma omp for private(j)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       x[j] = norm_temp2 * z[j];
     }
   } // end of do one iteration untimed
-}
+
 
 
 
