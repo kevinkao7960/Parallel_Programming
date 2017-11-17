@@ -24,6 +24,8 @@ static double p[NA+2];
 static double q[NA+2];
 static double r[NA+2];
 
+static double tmp[NITER];
+
 /* common / partit_size / */
 static int naa;
 static int nzz;
@@ -178,7 +180,6 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
     //---------------------------------------------------------------------
-
     conj_grad(colidx, rowstr, x, z, a, p, q, r, &rnorm);
 
     //---------------------------------------------------------------------
@@ -234,16 +235,14 @@ int main(int argc, char *argv[])
   // Main Iteration for inverse power methodf
   //---->
   //---------------------------------------------------------------------
-  double tmp;
-  #pragma omp parallel for ordered private(it, tmp)
+  #pragma omp parallel for ordered private(it)
   for (it = 1; it <= NITER; it++) {
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
     //---------------------------------------------------------------------
-    tmp = 0;
     if (timeron) timer_start(T_conj_grad);
     // conj_grad(colidx, rowstr, x, z, a, p, q, r, &rnorm);
-    conj_grad(colidx, rowstr, x, z, a, p, q, r, &tmp);
+    conj_grad(colidx, rowstr, x, z, a, p, q, r, &tmp[it]);
     if (timeron) timer_stop(T_conj_grad);
 
     //---------------------------------------------------------------------
@@ -270,7 +269,7 @@ int main(int argc, char *argv[])
     if (it == 1)
       printf("\n   iteration           ||r||                 zeta\n");
   #pragma omp ordered
-    printf("    %5d       %20.14E%20.13f\n", it, tmp, zeta);
+    printf("    %5d       %20.14E%20.13f\n", it, tmp[it], zeta);
     // printf("    %5d       %20.14E%20.13f\n", it, rnorm, zeta);
 
     //---------------------------------------------------------------------
