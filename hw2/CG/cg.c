@@ -234,6 +234,9 @@ int main(int argc, char *argv[])
   // Main Iteration for inverse power method
   //---->
   //---------------------------------------------------------------------
+#pragma omp parallel
+{
+  #pragma omp for ordered private(it)
   for (it = 1; it <= NITER; it++) {
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
@@ -250,34 +253,33 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
-  #pragma omp parallel
-  {
-    #pragma omp for reduction (+:norm_temp1)
+  // #pragma omp parallel
+  // {
+  // #pragma omp for reduction (+:norm_temp1)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       norm_temp1 = norm_temp1 + x[j]*z[j];
     }
-    #pragma omp for reduction (+:norm_temp2)
+  // #pragma omp for reduction (+:norm_temp2)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       norm_temp2 = norm_temp2 + z[j]*z[j];
     }
-  }
-
-
+  // }
     norm_temp2 = 1.0 / sqrt(norm_temp2);
-
     zeta = SHIFT + 1.0 / norm_temp1;
     if (it == 1)
       printf("\n   iteration           ||r||                 zeta\n");
+  #pragma omp ordered
     printf("    %5d       %20.14E%20.13f\n", it, rnorm, zeta);
 
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
+  // #pragma omp ordered
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       x[j] = norm_temp2 * z[j];
     }
   } // end of main iter inv pow meth
-
+}
   timer_stop(T_bench);
 
   //---------------------------------------------------------------------
