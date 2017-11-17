@@ -235,14 +235,12 @@ int main(int argc, char *argv[])
   // Main Iteration for inverse power methodf
   //---->
   //---------------------------------------------------------------------
-  #pragma omp parallel for ordered private(it)
   for (it = 1; it <= NITER; it++) {
     //---------------------------------------------------------------------
     // The call to the conjugate gradient routine:
     //---------------------------------------------------------------------
     if (timeron) timer_start(T_conj_grad);
-    // conj_grad(colidx, rowstr, x, z, a, p, q, r, &rnorm);
-    conj_grad(colidx, rowstr, x, z, a, p, q, r, &tmp[it]);
+    conj_grad(colidx, rowstr, x, z, a, p, q, r, &rnorm);
     if (timeron) timer_stop(T_conj_grad);
 
     //---------------------------------------------------------------------
@@ -253,34 +251,29 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
-  // #pragma omp parallel
-  // {
-  // #pragma omp for reduction (+:norm_temp1)
+
+    #pragma omp parallel for reduction (+:norm_temp1)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       norm_temp1 = norm_temp1 + x[j]*z[j];
     }
-  // #pragma omp for reduction (+:norm_temp2)
+    #pragma omp parallel for reduction (+:norm_temp2)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       norm_temp2 = norm_temp2 + z[j]*z[j];
     }
-  // }
     norm_temp2 = 1.0 / sqrt(norm_temp2);
     zeta = SHIFT + 1.0 / norm_temp1;
     if (it == 1)
       printf("\n   iteration           ||r||                 zeta\n");
-  #pragma omp ordered
-    printf("    %5d       %20.14E%20.13f\n", it, tmp[it], zeta);
-    // printf("    %5d       %20.14E%20.13f\n", it, rnorm, zeta);
+    printf("    %5d       %20.14E%20.13f\n", it, rnorm, zeta);
 
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
-  // #pragma omp ordered
+    #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       x[j] = norm_temp2 * z[j];
     }
   } // end of main iter inv pow meth
-// }
   timer_stop(T_bench);
 
   //---------------------------------------------------------------------
@@ -380,6 +373,7 @@ static void conj_grad(int colidx[],
     // Obtain p.q
     //---------------------------------------------------------------------
     d = 0.0;
+    #pragma omp parallel for reduction (+:d)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       d = d + p[j]*q[j];
     }
@@ -399,6 +393,7 @@ static void conj_grad(int colidx[],
     // and    r = r - alpha*q
     //---------------------------------------------------------------------
     rho = 0.0;
+    #pragma omp parallel for
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       z[j] = z[j] + alpha*p[j];
       r[j] = r[j] - alpha*q[j];
