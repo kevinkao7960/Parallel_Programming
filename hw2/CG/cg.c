@@ -336,7 +336,6 @@ static void conj_grad(int colidx[],
   // The conj grad iteration loop
   //---->
   //---------------------------------------------------------------------
-
   for (cgit = 1; cgit <= cgitmax; cgit++) {
     //---------------------------------------------------------------------
     // q = A.p
@@ -349,9 +348,6 @@ static void conj_grad(int colidx[],
     //       unrolled-by-two version is some 10% faster.
     //       The unrolled-by-8 version below is significantly faster
     //       on the Cray t3d - overall speed of code is 1.5 times faster.
-  // #pragma omp parallel
-  // {
-  // #pragma omp for private(j, k)
     #pragma omp parallel for private (j,k,sum)
     for (j = 0; j < lastrow - firstrow + 1; j++) {
       sum = 0.0;
@@ -364,9 +360,7 @@ static void conj_grad(int colidx[],
     //---------------------------------------------------------------------
     // Obtain p.q
     //---------------------------------------------------------------------
-  // #pragma omp single
     d = 0.0;
-  // #pragma omp for reduction (+:d)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       d = d + p[j]*q[j];
     }
@@ -374,22 +368,18 @@ static void conj_grad(int colidx[],
     //---------------------------------------------------------------------
     // Obtain alpha = rho / (p.q)
     //---------------------------------------------------------------------
-  // #pragma omp single
     alpha = rho / d;
 
     //---------------------------------------------------------------------
     // Save a temporary of rho
     //---------------------------------------------------------------------
-  // #pragma omp single
     rho0 = rho;
 
     //---------------------------------------------------------------------
     // Obtain z = z + alpha*p
     // and    r = r - alpha*q
     //---------------------------------------------------------------------
-  // #pragma omp single
     rho = 0.0;
-  // #pragma omp for reduction (+:rho)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       z[j] = z[j] + alpha*p[j];
       r[j] = r[j] - alpha*q[j];
@@ -414,12 +404,9 @@ static void conj_grad(int colidx[],
     //---------------------------------------------------------------------
     // p = r + beta*p
     // ---------------------------------------------------------------------
-  // #pragma omp for private(j)
     for (j = 0; j < lastcol - firstcol + 1; j++) {
       p[j] = r[j] + beta*p[j];
     }
-  // }
-    // #pragma omp parallel for private(j, k, sum)
 
   } // end of do cgit=1,cgitmax
 
