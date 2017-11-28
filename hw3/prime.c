@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv); /* Let the system do what it needs to start up MPI */
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); /* Get my process rank */
   MPI_Comm_size(MPI_COMM_WORLD, &size); /* Find out how many processes are being used*/
-  
+
   interval = (limit - 10) / size;
   start = interval * my_rank + 11;
   end = start + interval - 1;
@@ -63,8 +63,11 @@ int main(int argc, char *argv[])
     MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
   }
 
+  if( my_rank == 0 ){
+    printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
+  }
   MPI_Finalize();
-  printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
+
 
   return 0;
 }
