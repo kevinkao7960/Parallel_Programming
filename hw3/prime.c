@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   interval = (limit - 10) / size;
   start = interval * my_rank + 11;
   if( my_rank == (size-1) ){
-    end = limit
+    end = limit;
   }
   else{
     end = start + interval - 1;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
       if( temp_found > foundone ){
         foundone = temp_found;
       }
-      print("%lld\n", local_pc);
+      printf("%lld\n", local_pc);
       pc = pc + local_pc;
     }
   }
