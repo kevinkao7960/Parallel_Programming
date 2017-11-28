@@ -13,6 +13,7 @@ int main(int argc, char **argv)
   int my_rank, size, source, dest = 0, tag = 0;
   long long int start, end, interval_amount;
   long long local_sum;
+  MPI_Status status;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
