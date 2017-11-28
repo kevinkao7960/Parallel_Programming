@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <mpi.h>
 
 int isprime(int n) {
   int i,squareroot;
@@ -21,7 +22,7 @@ int main(int argc, char *argv[])
       foundone; /* most recent prime found */
   long long int n, limit;
 
-  sscanf(argv[1],"%llu",&limit);	
+  sscanf(argv[1],"%llu",&limit);
   printf("Starting. Numbers to be scanned= %lld\n",limit);
 
   pc=4;     /* Assume (2,3,5,7) are counted here */
@@ -30,9 +31,9 @@ int main(int argc, char *argv[])
     if (isprime(n)) {
       pc++;
       foundone = n;
-    }			
+    }
   }
   printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
 
   return 0;
-} 
+}
