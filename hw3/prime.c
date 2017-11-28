@@ -27,13 +27,15 @@ int main(int argc, char *argv[])
   long long int local_pc = 0, start, end, interval, temp_found = 0;
   MPI_Status status;
 
-  sscanf(argv[1],"%llu",&limit);
-  printf("Starting. Numbers to be scanned= %lld\n",limit);
 
   //pc=4;     /* Assume (2,3,5,7) are counted here */
   MPI_Init(&argc, &argv); /* Let the system do what it needs to start up MPI */
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); /* Get my process rank */
   MPI_Comm_size(MPI_COMM_WORLD, &size); /* Find out how many processes are being used*/
+  sscanf(argv[1],"%llu",&limit);
+  if(my_rank == 0){
+    printf("Starting. Numbers to be scanned= %lld\n",limit);
+  }
 
   interval = (limit - 10) / size;
   start = interval * my_rank + 11;
@@ -49,7 +51,7 @@ int main(int argc, char *argv[])
   /* Add up the results (local_pc) by each process*/
   if( my_rank == 0 ){
     pc = 4 + local_pc; /* Assume (2,3,5,7) are counted here*/
-    for( source = 1; source < size; source++){
+    for(source = 1; source < size; source++){
       MPI_Recv(&local_pc, 1, MPI_LONG_LONG_INT, source, tag, MPI_COMM_WORLD, &status);
       MPI_Recv(&temp_found, 1, MPI_LONG_LONG_INT, size - source, tag, MPI_COMM_WORLD, &status);
       if( temp_found > foundone ){
