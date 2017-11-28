@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
   /* var for MPI */
   int my_rank, size, source, dest = 0, tag = 0;
-  long long int local_pc, start, end, interval, local_pc, temp_found = 0;
+  long long int local_pc = 0, start, end, interval, temp_found = 0;
   MPI_Status status;
 
   sscanf(argv[1],"%llu",&limit);
@@ -34,8 +34,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv); /* Let the system do what it needs to start up MPI */
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank); /* Get my process rank */
   MPI_Comm_size(MPI_COMM_WORLD, &size); /* Find out how many processes are being used*/
-
-  local_pc = 0;
+  
   interval = (limit - 10) / size;
   start = interval * my_rank + 11;
   end = start + interval - 1;
@@ -51,8 +50,8 @@ int main(int argc, char *argv[])
   if( my_rank == 0 ){
     pc = 4 + local_pc; /* Assume (2,3,5,7) are counted here*/
     for( source = 1; source < size; source++){
-      MPI_Recv(&local_pc, 1, MPI_LONG_LOGN_INT, source, tag, MPI_COMM_WORLD, &status);
-      MPI_Recv(&temp_found, 1, MPI_LONG_LOGN_INT, size - source, tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(&local_pc, 1, MPI_LONG_LONG_INT, source, tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(&temp_found, 1, MPI_LONG_LONG_INT, size - source, tag, MPI_COMM_WORLD, &status);
       if( temp_found > foundone ){
         foundone = temp_found;
       }
@@ -60,8 +59,8 @@ int main(int argc, char *argv[])
     }
   }
   else{
-    MPI_Send(&local_pc, 1, MPI_LONG_LOGN_INT, dest, tag, MPI_COMM_WORLD);
-    MPI_Send(&foundone, 1, MPI_LONG_LOGN_INT, dest, tag, MPI_COMM_WORLD);
+    MPI_Send(&local_pc, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
+    MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
   }
 
   MPI_Finalize();
