@@ -39,7 +39,13 @@ int main(int argc, char *argv[])
 
   interval = (limit - 10) / size;
   start = interval * my_rank + 11;
-  end = start + interval - 1;
+  if( my_rank == (size-1) ){
+    end = limit
+  }
+  else{
+    end = start + interval - 1;
+  }
+
   printf("rank%d: start from %lld to %lld\n", my_rank, start, end);
   for (n = start; n <= end; n = n + 2) {
     if (isprime(n)) {
@@ -57,10 +63,12 @@ int main(int argc, char *argv[])
       if( temp_found > foundone ){
         foundone = temp_found;
       }
+      print("%lld\n", local_pc);
       pc = pc + local_pc;
     }
   }
   else{
+
     MPI_Send(&local_pc, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
     MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
   }
