@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     pc = 4 + local_pc; /* Assume (2,3,5,7) are counted here*/
     for(source = 1; source < size; source++){
       MPI_Recv(&local_pc, 1, MPI_LONG_LONG_INT, source, tag, MPI_COMM_WORLD, &status);
-      MPI_Recv(&temp_found, 1, MPI_LONG_LONG_INT, size - source, tag, MPI_COMM_WORLD, &status);
+      //MPI_Recv(&temp_found, 1, MPI_LONG_LONG_INT, size - source, tag, MPI_COMM_WORLD, &status);
       if( temp_found > foundone ){
         foundone = temp_found;
       }
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   else{
     printf("rank:%d\tlocal_pc:%lld\tfoundone:%lld\n", my_rank, local_pc, foundone);
     MPI_Send(&local_pc, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
-    MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
+    //MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
   }
 
   if( my_rank == 0 ){
