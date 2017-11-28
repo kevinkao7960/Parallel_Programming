@@ -38,6 +38,7 @@ int main(int argc, char **argv)
     x_middle = (i - 0.5) * rect_width;
     area = sin(x_middle) * rect_width;
     local_sum = local_sum + area;
+    printf("for:rank:%d\tlocal_sum:%lld\n", my_rank, local_sum);
   }
 
   if( my_rank == 0 ){
