@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   interval = (limit - 10) / size;
   start = interval * my_rank + 11;
   end = start + interval - 1;
-  printf("rank%d: start from %lld to %lld", my_rank, start, end);
+  printf("rank%d: start from %lld to %lld\n", my_rank, start, end);
   for (n = start; n <= end; n = n + 2) {
     if (isprime(n)) {
       local_pc++;
