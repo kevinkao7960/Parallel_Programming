@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <mpi.h>
+#include "mpi.h"
 
-int isprime(int n) {
-  int i,squareroot;
+int isprime(long long int n) {
+  long long int i,squareroot;
   if (n>10) {
-    squareroot = (int) sqrt(n);
+    squareroot = (long long int) sqrt(n);
     for (i=3; i<=squareroot; i=i+2)
       if ((n%i)==0)
         return 0;
@@ -18,14 +18,16 @@ int isprime(int n) {
 
 int main(int argc, char *argv[])
 {
-  int pc,       /* prime counter */
-      foundone; /* most recent prime found */
+  long long int pc,       /* prime counter */
+                foundone; /* most recent prime found */
   long long int n, limit;
 
   sscanf(argv[1],"%llu",&limit);
   printf("Starting. Numbers to be scanned= %lld\n",limit);
 
   pc=4;     /* Assume (2,3,5,7) are counted here */
+  MPI_Init(&argc, &argv);
+  long long local_pc = 0;
 
   for (n=11; n<=limit; n=n+2) {
     if (isprime(n)) {
@@ -33,6 +35,8 @@ int main(int argc, char *argv[])
       foundone = n;
     }
   }
+
+  MPI_Finalize();
   printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
 
   return 0;
