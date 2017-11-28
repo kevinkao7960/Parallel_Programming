@@ -35,7 +35,6 @@ int main(int argc, char **argv)
 
   for( i = start; i < end; i++ ){
     /* find the middle of the interval on the X-axis. */
-
     x_middle = (i - 0.5) * rect_width;
     area = sin(x_middle) * rect_width;
     local_sum = local_sum + area;
@@ -50,9 +49,10 @@ int main(int argc, char **argv)
     printf("The total area is: %f\n", (float)sum);
   }
   else{
+    printf("rank:%d\tlocal_sum:%lld\n", my_rank, local_sum);
     MPI_Send(&local_sum, 1, MPI_DOUBLE, dest, tag, MPI_COMM_WORLD);
   }
   MPI_Finalize();
-  
+
   return 0;
 }
