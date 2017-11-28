@@ -48,7 +48,8 @@ int main(int argc, char *argv[])
   }
 
   printf("rank%d: start from %lld to %lld\n", my_rank, start, end);
-  for (n = start; n <= end; n = n + 2) {
+
+  for (n = start; n <= end; n = n + 1) {
     if (isprime(n)) {
       local_pc++;
       foundone = n;
