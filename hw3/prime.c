@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   /* var for MPI */
   int my_rank, size, source, dest = 0, tag = 0;
   long long int local_pc, start, end, interval, temp_found = 0;
-  MPI_Status status, status2;
+  MPI_Status status, status;
 
 
   //pc=4;     /* Assume (2,3,5,7) are counted here */
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     pc = 4 + local_pc; /* Assume (2,3,5,7) are counted here*/
     for(source = 1; source < size; source++){
       MPI_Recv(&local_pc, 1, MPI_LONG_LONG_INT, source, tag, MPI_COMM_WORLD, &status);
-      MPI_Recv(&temp_found, 1, MPI_LONG_LONG_INT, size - source, tag, MPI_COMM_WORLD, &status2);
+      MPI_Recv(&temp_found, 1, MPI_LONG_LONG_INT, source, tag, MPI_COMM_WORLD, &status);
       if( temp_found > foundone ){
         foundone = temp_found;
       }
