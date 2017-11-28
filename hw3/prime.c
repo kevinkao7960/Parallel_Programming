@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     }
   }
   else{
-
+    printf("rank:%d\tlocal_pc:%lld\tfoundone:%lld\n", my_rank, local_pc, foundone);
     MPI_Send(&local_pc, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
     MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
   }
