@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   /* var for MPI */
   int my_rank, size, source, dest = 0, tag = 0;
   long long int local_pc, start, end, interval, temp_found = 0;
-  MPI_Status status, status;
+  MPI_Status status;
 
 
   //pc=4;     /* Assume (2,3,5,7) are counted here */
