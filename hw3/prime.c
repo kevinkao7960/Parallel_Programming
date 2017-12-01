@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
     end = start + interval - 1;
   }
 
-  printf("rank%d: start from %lld to %lld\n", my_rank, start, end);
   if( start%2 == 0 ){
     start = start + 1;
   }
@@ -70,16 +69,16 @@ int main(int argc, char *argv[])
       printf("%lld\n", local_pc);
       pc = pc + local_pc;
     }
+    printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
   }
   else{
-    printf("rank:%d\tlocal_pc:%lld\tfoundone:%lld\n", my_rank, local_pc, foundone);
     MPI_Send(&local_pc, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
     MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
   }
 
-  if( my_rank == 0 ){
-    printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
-  }
+  // if( my_rank == 0 ){
+  //   printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
+  // }
   MPI_Finalize();
 
 
