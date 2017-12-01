@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
       if( temp_found > foundone ){
         foundone = temp_found;
       }
-      printf("%lld\n", local_pc);
+      
       pc = pc + local_pc;
     }
     printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
@@ -76,9 +76,6 @@ int main(int argc, char *argv[])
     MPI_Send(&foundone, 1, MPI_LONG_LONG_INT, dest, tag, MPI_COMM_WORLD);
   }
 
-  // if( my_rank == 0 ){
-  //   printf("Done. Largest prime is %d Total primes %d\n",foundone,pc);
-  // }
   MPI_Finalize();
 
 
