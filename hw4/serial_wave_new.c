@@ -60,7 +60,7 @@ void check_param(void)
 *********************************************************************/
 void init_line(void)
 {
-    int i, j;
+    int j;
     float x, fac, k, tmp;
 
     /* Calculate initial values based on sine curve */
@@ -100,7 +100,7 @@ __global__ void update(int nsteps, int tpoints, float *values_d)
 {
     int i;
     int j = 1 + threadIdx.x;
-    int k = j + blockIdx.x * blockDim.x;
+    int k = j + blockIdx.x * 32;
 
     float oldval_d;
     float newval_d;
@@ -112,11 +112,11 @@ __global__ void update(int nsteps, int tpoints, float *values_d)
 
         for( i = 1; i <= nsteps; i++ ){
             if((k == 1) || (k == tpoints)){
-                newval_d = 0.0;
+                newval_d = 0.0f;
             }
             else{
                 // do_math(k)
-                newval_d = 1.82 * curval_d - oldval_d;
+                newval_d = (2.0 * curval_d) - oldval_d + (0.09f * (-2.0)*curval_d);
             }
 
             oldval_d = curval_d;
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 
     dim3 dimGrid(blockNum, 1);
     dim3 dimBlock(32, 1);
-    update<<dimGrid, dimBlock>>(nsteps, tpoints, values_d);
+    update<<<dimGrid, dimBlock>>>(nsteps, tpoints, values_d);
 
     // update();
     printf("Printing final results...\n");
