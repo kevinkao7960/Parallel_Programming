@@ -100,7 +100,7 @@ __global__ void update(int nsteps, int tpoints, float *values_d)
 {
     int i;
     int j = 1 + threadIdx.x;
-    int k = j + blockIdx.x * 32;
+    int k = j + blockIdx.x * 1024;
 
     float oldval_d;
     float newval_d;
@@ -168,15 +168,16 @@ int main(int argc, char *argv[])
     *1 Block size: 32
     *********************************************************************/
     int blockNum;
-    if( tpoints % 32 ){
-        blockNum = 1 + (tpoints / 32);
+    int blockSize = 1024 * 1024
+    if( tpoints % blockSize ){
+        blockNum = 1 + (tpoints / blockSize);
     }
     else{
-        blockNum = tpoints / 32;
+        blockNum = tpoints / blockSize;
     }
 
     dim3 dimGrid(blockNum, 1);
-    dim3 dimBlock(32, 1);
+    dim3 dimBlock(1024, 1024);
     update<<<dimGrid, dimBlock>>>(nsteps, tpoints, values_d);
 
     // update();
