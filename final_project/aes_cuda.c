@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <string.h>
-
+#include <stdlib.h>
 #define BYTE unsigned char
+#define BLOCKSIZE 16
+
+int pic_len;
 
 void printBytes(BYTE b[], int len) {
     int i;
@@ -190,6 +193,25 @@ BYTE* readFile(char *filename){
     fseek(file, 0, SEEK_SET);
 
     // Allocate memory
+    buffer = (BYTE*)malloc(fileLen + 1);
+    if(!buffer){
+        fprintf(stderr, "Memory error!");
+        fclose(file);
+        return 0;
+    }
+
+    fread(buffer, fileLen, sizeof(BYTE), file);
+    fclose(file);
+    
+    // int i = 0;
+    // while( i < fileLen){
+    //     printf("%02x ", (BYTE)buffer[i]);
+    //     i++;
+    //     if( !(i%16) ) printf("\n");
+    // }
+    pic_len = fileLen;
+
+    return buffer;
 }
 
 // ===================== test ============================================
@@ -197,34 +219,63 @@ int main() {
     int i;
     AES_Init();
 
-    BYTE block[16];
-    for(i = 0; i < 16; i++)
-        block[i] = 0x11 * i;
+    // BYTE block[16];
+    // for(i = 0; i < 16; i++)
+    //     block[i] = 0x11 * i;
 
     BYTE *pic;
     pic = readFile("minions.jpg");
 
+    if( !pic ){
+        fprintf(stderr, "Memory creation error");
+    }
+    else{
+        // delete jpg header (11 bytes)
+        for( int i = 11; i < pic_len; i++ ){
+            pic[i-11] = pic[i];
+        }
+        printf("%d\n", pic_len);
+        // delete the last header (2 bytes)
+        // recalculate picSize
+        pic_len -= 11;
+        
+        pic[pic_len-1] = 0;
+        // printf("%02x ", (BYTE)pic[pic_len-2]);
+        pic[pic_len-2] = 0;
+        // printf("%02x ", (BYTE)pic[pic_len-3]);
+        pic_len -= 2;
+        pic = (BYTE*)realloc(pic, pic_len);
+        printf("%d\n", pic_len);
+        int i = 0;
+        while( i < pic_len){
+            printf("%02x ", (BYTE)pic[i]);
+            i++;
+            if( !(i%16) ) printf("\n");
+        }
+        
+        // align the last block
+    }
 
-    printf("原始訊息："); printBytes(block, 16);
+    // printf("原始訊息："); printBytes(block, 16);
 
-    BYTE key[16 * (14 + 1)];
-    int keyLen = 32, maxKeyLen=16 * (14 + 1), blockLen = 16;
-    for(i = 0; i < keyLen; i++)
-        key[i] = i;
+    // BYTE key[16 * (14 + 1)];
+    // int keyLen = 32, maxKeyLen=16 * (14 + 1), blockLen = 16;
+    // for(i = 0; i < keyLen; i++)
+    //     key[i] = i;
 
-    printf("原始金鑰："); printBytes(key, keyLen);
+    // printf("原始金鑰："); printBytes(key, keyLen);
 
-    int expandKeyLen = AES_ExpandKey(key, keyLen);
+    // int expandKeyLen = AES_ExpandKey(key, keyLen);
 
-    printf("展開金鑰："); printBytes(key, expandKeyLen);
+    // printf("展開金鑰："); printBytes(key, expandKeyLen);
 
-    AES_Encrypt(block, key, expandKeyLen);
+    // AES_Encrypt(block, key, expandKeyLen);
 
-    printf("加密完後："); printBytes(block, blockLen);
+    // printf("加密完後："); printBytes(block, blockLen);
 
-    AES_Decrypt(block, key, expandKeyLen);
+    // AES_Decrypt(block, key, expandKeyLen);
 
-    printf("解密完後："); printBytes(block, blockLen);
+    // printf("解密完後："); printBytes(block, blockLen);
 
-    AES_Done();
+    // AES_Done();
 }
