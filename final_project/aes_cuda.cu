@@ -36,19 +36,19 @@ BYTE AES_Sbox_Inv[256];
 BYTE AES_ShiftRowTab_Inv[16];
 BYTE AES_xtime[256];
 
-void AES_SubBytes(BYTE state[], BYTE sbox[]) {
+__device__ void AES_SubBytes(BYTE state[], BYTE sbox[]) {
     int i;
     for(i = 0; i < 16; i++)
         state[i] = sbox[state[i]];
 }
 
-void AES_AddRoundKey(BYTE state[], BYTE rkey[]) {
+__device__ void AES_AddRoundKey(BYTE state[], BYTE rkey[]) {
     int i;
     for(i = 0; i < 16; i++)
         state[i] ^= rkey[i];
 }
 
-void AES_ShiftRows(BYTE state[], BYTE shifttab[]) {
+__device__ void AES_ShiftRows(BYTE state[], BYTE shifttab[]) {
     BYTE h[16];
     memcpy(h, state, 16);
     int i;
@@ -56,32 +56,32 @@ void AES_ShiftRows(BYTE state[], BYTE shifttab[]) {
         state[i] = h[shifttab[i]];
 }
 
-void AES_MixColumns(BYTE state[]) {
+__device__ void AES_MixColumns(BYTE state[], BYTE aes_xtime[]) {
     int i;
     for(i = 0; i < 16; i += 4) {
         BYTE s0 = state[i + 0], s1 = state[i + 1];
         BYTE s2 = state[i + 2], s3 = state[i + 3];
         BYTE h = s0 ^ s1 ^ s2 ^ s3;
-        state[i + 0] ^= h ^ AES_xtime[s0 ^ s1];
-        state[i + 1] ^= h ^ AES_xtime[s1 ^ s2];
-        state[i + 2] ^= h ^ AES_xtime[s2 ^ s3];
-        state[i + 3] ^= h ^ AES_xtime[s3 ^ s0];
+        state[i + 0] ^= h ^ aes_xtime[s0 ^ s1];
+        state[i + 1] ^= h ^ aes_xtime[s1 ^ s2];
+        state[i + 2] ^= h ^ aes_xtime[s2 ^ s3];
+        state[i + 3] ^= h ^ aes_xtime[s3 ^ s0];
     }
 }
 
-void AES_MixColumns_Inv(BYTE state[]) {
+__device__ void AES_MixColumns_Inv(BYTE state[], BYTE aes_xtime[]) {
     int i;
     for(i = 0; i < 16; i += 4) {
         BYTE s0 = state[i + 0], s1 = state[i + 1];
         BYTE s2 = state[i + 2], s3 = state[i + 3];
         BYTE h = s0 ^ s1 ^ s2 ^ s3;
-        BYTE xh = AES_xtime[h];
-        BYTE h1 = AES_xtime[AES_xtime[xh ^ s0 ^ s2]] ^ h;
-        BYTE h2 = AES_xtime[AES_xtime[xh ^ s1 ^ s3]] ^ h;
-        state[i + 0] ^= h1 ^ AES_xtime[s0 ^ s1];
-        state[i + 1] ^= h2 ^ AES_xtime[s1 ^ s2];
-        state[i + 2] ^= h1 ^ AES_xtime[s2 ^ s3];
-        state[i + 3] ^= h2 ^ AES_xtime[s3 ^ s0];
+        BYTE xh = aes_xtime[h];
+        BYTE h1 = aes_xtime[aes_xtime[xh ^ s0 ^ s2]] ^ h;
+        BYTE h2 = aes_xtime[aes_xtime[xh ^ s1 ^ s3]] ^ h;
+        state[i + 0] ^= h1 ^ aes_xtime[s0 ^ s1];
+        state[i + 1] ^= h2 ^ aes_xtime[s1 ^ s2];
+        state[i + 2] ^= h1 ^ aes_xtime[s2 ^ s3];
+        state[i + 3] ^= h2 ^ aes_xtime[s3 ^ s0];
     }
 }
 
@@ -145,30 +145,30 @@ int AES_ExpandKey(BYTE key[], int keyLen) {
 }
 
 // AES_Encrypt: encrypt the 16 byte array 'block' with the previously expanded key 'key'.
-__global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen) {
+__global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_sbox[], BYTE aes_shiftrowtab[], BYTE aes_xtime[]) {
     int l = keyLen, i;
-    printBytes(block, 16);
+    // printBytes(block, 16);
     AES_AddRoundKey(block, &key[0]);
     for(i = 16; i < l - 16; i += 16) {
-        AES_SubBytes(block, AES_Sbox);
-        AES_ShiftRows(block, AES_ShiftRowTab);
-        AES_MixColumns(block);
+        AES_SubBytes(block, aes_sbox);
+        AES_ShiftRows(block, aes_shiftrowtab);
+        AES_MixColumns(block, aes_xtime);
         AES_AddRoundKey(block, &key[i]);
     }
-    AES_SubBytes(block, AES_Sbox);
-    AES_ShiftRows(block, AES_ShiftRowTab);
+    AES_SubBytes(block, aes_sbox);
+    AES_ShiftRows(block, aes_shiftrowtab);
     AES_AddRoundKey(block, &key[i]);
 }
 
 // AES_Decrypt: decrypt the 16 byte array 'block' with the previously expanded key 'key'.
-void AES_Decrypt(BYTE block[], BYTE key[], int keyLen) {
+__global__ void AES_Decrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_xtime[]) {
     int l = keyLen, i;
     AES_AddRoundKey(block, &key[l - 16]);
     AES_ShiftRows(block, AES_ShiftRowTab_Inv);
     AES_SubBytes(block, AES_Sbox_Inv);
     for(i = l - 32; i >= 16; i -= 16) {
         AES_AddRoundKey(block, &key[i]);
-        AES_MixColumns_Inv(block);
+        AES_MixColumns_Inv(block, aes_xtime);
         AES_ShiftRows(block, AES_ShiftRowTab_Inv);
         AES_SubBytes(block, AES_Sbox_Inv);
     }
@@ -202,13 +202,7 @@ BYTE* readFile(char *filename){
 
     fread(buffer, fileLen, sizeof(BYTE), file);
     fclose(file);
-    
-    // int i = 0;
-    // while( i < fileLen){
-    //     printf("%02x ", (BYTE)buffer[i]);
-    //     i++;
-    //     if( !(i%16) ) printf("\n");
-    // }
+
     pic_len = fileLen;
 
     return buffer;
@@ -242,7 +236,7 @@ int main() {
         pic_len -= 2;
         pic = (BYTE*)realloc(pic, pic_len);
         printf("%d\n", pic_len);
-                
+
         // align the last block
         if( pic_len % 16 ){
             int align_num = 16 - pic_len % 16;
@@ -258,23 +252,33 @@ int main() {
         //     printf("%02x ", (BYTE)pic[i]);
         //     i++;
         //     if( !(i%16) ) printf("\n");
-        // } 
+        // }
 
         // allocate the cuda device space
-        BYTE* pic_d;
+        BYTE *pic_d, *key_d, *AES_Sbox_d, *AES_ShiftRowTab_d, *AES_Sbox_Inv_d, *AES_ShiftRowTab_Inv_d, *AES_xtime_d;
         BYTE key[16 * (14 + 1)];
-        BYTE* key_d;
 
         int keyLen = 32, maxKeyLen=16 * (14 + 1);
-        for( i = 0; i < keyLen; i++ ){
-            key[i] = i;
+        for( int j = 0; j < keyLen; j++ ){
+            key[j] = j;
         }
         int expandKeyLen = AES_ExpandKey(key, keyLen);
 
         cudaMalloc( &pic_d, pic_len*sizeof(BYTE) );
-        cudaMemcpy( pic_d, pic, pic_len*sizeof(BYTE));
+        cudaMemcpy( pic_d, pic, pic_len*sizeof(BYTE), cudaMemcpyHostToDevice);
         cudaMalloc( &key_d, expandKeyLen);
-        cudaMemcpy( key_d, key, expandKeyLen*sizeof(BYTE));
+        cudaMemcpy( key_d, key, expandKeyLen*sizeof(BYTE), cudaMemcpyHostToDevice);
+
+        cudaMalloc( &AES_Sbox_d, sizeof(AES_Sbox)/sizeof(BYTE));
+        cudaMemcpy( AES_Sbox_d, AES_Sbox, sizeof(AES_Sbox)/sizeof(BYTE), cudaMemcpyHostToDevice);
+        cudaMalloc( &AES_ShiftRowTab_d, sizeof(AES_ShiftRowTab)/sizeof(BYTE));
+        cudaMemcpy( AES_ShiftRowTab_d, AES_ShiftRowTab, sizeof(AES_ShiftRowTab)/sizeof(BYTE), cudaMemcpyHostToDevice);
+        cudaMalloc( &AES_Sbox_Inv_d, sizeof(AES_Sbox_Inv)/sizeof(BYTE));
+        cudaMemcpy( AES_Sbox_Inv_d, AES_Sbox_Inv, sizeof(AES_Sbox_Inv)/sizeof(BYTE), cudaMemcpyHostToDevice);
+        cudaMalloc( &AES_ShiftRowTab_Inv_d, sizeof(AES_ShiftRowTab_Inv)/sizeof(BYTE));
+        cudaMemcpy( AES_ShiftRowTab_Inv_d, AES_ShiftRowTab_Inv, sizeof(AES_ShiftRowTab_Inv)/sizeof(BYTE), cudaMemcpyHostToDevice);
+        cudaMalloc( &AES_xtime_d, sizeof(AES_xtime)/sizeof(BYTE));
+        cudaMemcpy( AES_xtime_d, AES_xtime, sizeof(AES_xtime)/sizeof(BYTE), cudaMemcpyHostToDevice);
 
 
         /**
@@ -291,9 +295,9 @@ int main() {
 
         dim3 dimGrid(blockNum, 1);
         dim3 dimBlock(16, 1);
-        
-        AES_Encrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen);
-        
+
+        AES_Encrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen, AES_Sbox_d, AES_ShiftRowTab_d, AES_xtime_d);
+
 
     }
 
@@ -314,7 +318,7 @@ int main() {
 
     // printf("加密完後："); printBytes(block, blockLen);
 
-    // AES_Decrypt(block, key, expandKeyLen);
+    // AES_Decrypt(block, key, expandKeyLen, aes_xtime_d);
 
     // printf("解密完後："); printBytes(block, blockLen);
 
