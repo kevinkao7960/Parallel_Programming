@@ -147,6 +147,14 @@ int AES_ExpandKey(BYTE key[], int keyLen) {
 // AES_Encrypt: encrypt the 16 byte array 'block' with the previously expanded key 'key'.
 __global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_sbox[], BYTE aes_shiftrowtab[], BYTE aes_xtime[]) {
     int l = keyLen, i;
+    int j = threadIdx.x;
+    int k = j + blockIdx.x * 16;
+
+    BYTE device_block[16];
+    for( int idx = k*16; idx < k*16+16; idx++){
+        device_block = block[idx];
+    }
+
     // printBytes(block, 16);
     AES_AddRoundKey(block, &key[0]);
     for(i = 16; i < l - 16; i += 16) {
