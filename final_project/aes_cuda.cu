@@ -161,16 +161,16 @@ __global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_sbox[
 }
 
 // AES_Decrypt: decrypt the 16 byte array 'block' with the previously expanded key 'key'.
-__global__ void AES_Decrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_xtime[]) {
+__global__ void AES_Decrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_xtime[],BYTE aes_shiftrowtab_inv[], BYTE aes_sbox_inv[]) {
     int l = keyLen, i;
     AES_AddRoundKey(block, &key[l - 16]);
-    AES_ShiftRows(block, AES_ShiftRowTab_Inv);
-    AES_SubBytes(block, AES_Sbox_Inv);
+    AES_ShiftRows(block, aes_shiftrowtab_inv);
+    AES_SubBytes(block, aes_sbox_inv);
     for(i = l - 32; i >= 16; i -= 16) {
         AES_AddRoundKey(block, &key[i]);
         AES_MixColumns_Inv(block, aes_xtime);
-        AES_ShiftRows(block, AES_ShiftRowTab_Inv);
-        AES_SubBytes(block, AES_Sbox_Inv);
+        AES_ShiftRows(block, aes_shiftrowtab_inv);
+        AES_SubBytes(block, aes_sbox_inv);
     }
     AES_AddRoundKey(block, &key[0]);
 }
