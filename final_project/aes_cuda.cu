@@ -145,7 +145,7 @@ int AES_ExpandKey(BYTE key[], int keyLen) {
 }
 
 // AES_Encrypt: encrypt the 16 byte array 'block' with the previously expanded key 'key'.
-void AES_Encrypt(BYTE block[], BYTE key[], int keyLen) {
+__global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen) {
     int l = keyLen, i;
     printBytes(block, 16);
     AES_AddRoundKey(block, &key[0]);
@@ -262,10 +262,37 @@ int main() {
 
         // allocate the cuda device space
         BYTE* pic_d;
+        BYTE key[16 * (14 + 1)];
+        BYTE* key_d;
+
+        int keyLen = 32, maxKeyLen=16 * (14 + 1);
+        for( i = 0; i < keyLen; i++ ){
+            key[i] = i;
+        }
+        int expandKeyLen = AES_ExpandKey(key, keyLen);
+
         cudaMalloc( &pic_d, pic_len*sizeof(BYTE) );
         cudaMemcpy( pic_d, pic, pic_len*sizeof(BYTE));
+        cudaMalloc( &key_d, expandKeyLen);
+        cudaMemcpy( key_d, key, expandKeyLen*sizeof(BYTE));
 
 
+        /**
+         * Block Size: 16 thread
+         * Grid Size: BlockNum, 1
+         **/
+        int blockNum;
+        if( pic_len % 16 ){
+            blockNum = 1 + pic_len / 16;
+        }
+        else{
+            blockNum = pic_len / 16;
+        }
+
+        dim3 dimGrid(blockNum, 1);
+        dim3 dimBlock(16, 1);
+        
+        AES_Encrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen);
         
 
     }
