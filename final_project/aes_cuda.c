@@ -236,24 +236,31 @@ int main() {
         }
         printf("%d\n", pic_len);
         // delete the last header (2 bytes)
-        // recalculate picSize
         pic_len -= 11;
-        
         pic[pic_len-1] = 0;
-        // printf("%02x ", (BYTE)pic[pic_len-2]);
         pic[pic_len-2] = 0;
-        // printf("%02x ", (BYTE)pic[pic_len-3]);
         pic_len -= 2;
         pic = (BYTE*)realloc(pic, pic_len);
         printf("%d\n", pic_len);
-        int i = 0;
-        while( i < pic_len){
-            printf("%02x ", (BYTE)pic[i]);
-            i++;
-            if( !(i%16) ) printf("\n");
-        }
-        
+                
         // align the last block
+        if( pic_len % 16 ){
+            int align_num = 16 - pic_len % 16;
+            pic_len += align_num;
+            pic = (BYTE*)realloc(pic, pic_len);
+            for( int j = 0; j < align_num; j++ ){
+                pic[pic_len - j - 1] = 0;
+            }
+        }
+
+        // int i = 0;
+        // while( i < pic_len){
+        //     printf("%02x ", (BYTE)pic[i]);
+        //     i++;
+        //     if( !(i%16) ) printf("\n");
+        // }
+        
+
     }
 
     // printf("原始訊息："); printBytes(block, 16);
