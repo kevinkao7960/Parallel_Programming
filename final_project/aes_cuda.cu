@@ -152,20 +152,24 @@ __global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_sbox[
 
     BYTE device_block[16];
     for( int idx = k*16; idx < k*16+16; idx++){
-        device_block = block[idx];
+        device_block[idx - k*16] = block[idx];
     }
 
     // printBytes(block, 16);
-    AES_AddRoundKey(block, &key[0]);
+    AES_AddRoundKey(device_block, &key[0]);
     for(i = 16; i < l - 16; i += 16) {
-        AES_SubBytes(block, aes_sbox);
-        AES_ShiftRows(block, aes_shiftrowtab);
-        AES_MixColumns(block, aes_xtime);
-        AES_AddRoundKey(block, &key[i]);
+        AES_SubBytes(device_block, aes_sbox);
+        AES_ShiftRows(device_block, aes_shiftrowtab);
+        AES_MixColumns(device_block, aes_xtime);
+        AES_AddRoundKey(device_block, &key[i]);
     }
-    AES_SubBytes(block, aes_sbox);
-    AES_ShiftRows(block, aes_shiftrowtab);
-    AES_AddRoundKey(block, &key[i]);
+    AES_SubBytes(device_block, aes_sbox);
+    AES_ShiftRows(device_block, aes_shiftrowtab);
+    AES_AddRoundKey(device_block, &key[i]);
+
+    for( int idx = k*16; idx < k*16+16; idx++ ){
+        block[idx] = device_block[idx - k*16];
+    }
 }
 
 // AES_Decrypt: decrypt the 16 byte array 'block' with the previously expanded key 'key'.
@@ -218,7 +222,7 @@ BYTE* readFile(char *filename){
 
 // ===================== test ============================================
 int main() {
-    int i;
+    // int i;
     AES_Init();
 
     // BYTE block[16];
@@ -246,24 +250,19 @@ int main() {
         printf("%d\n", pic_len);
 
         // align the last block
-        if( pic_len % 16 ){
-            int align_num = 16 - pic_len % 16;
-            pic_len += align_num;
-            pic = (BYTE*)realloc(pic, pic_len);
-            for( int j = 0; j < align_num; j++ ){
-                pic[pic_len - j - 1] = 0;
-            }
-        }
-
-        // int i = 0;
-        // while( i < pic_len){
-        //     printf("%02x ", (BYTE)pic[i]);
-        //     i++;
-        //     if( !(i%16) ) printf("\n");
+        // if( pic_len % 16 ){
+        //     int align_num = 16 - pic_len % 16;
+        //     pic_len += align_num;
+        //     pic = (BYTE*)realloc(pic, pic_len);
+        //     for( int j = 0; j < align_num; j++ ){
+        //         pic[pic_len - j - 1] = 1;
+        //     }
         // }
 
+
+
         // allocate the cuda device space
-        BYTE *pic_d, *key_d, *AES_Sbox_d, *AES_ShiftRowTab_d, *AES_Sbox_Inv_d, *AES_ShiftRowTab_Inv_d, *AES_xtime_d;
+        BYTE *pic_d, *key_d, *AES_Sbox_d, *AES_ShiftRowTab_d, *AES_Sbox_Inv_d, *AES_ShiftRowTab_Inv_d, *AES_xtime_d, *encrypt_result;
         BYTE key[16 * (14 + 1)];
 
         int keyLen = 32, maxKeyLen=16 * (14 + 1);
@@ -306,7 +305,23 @@ int main() {
 
         AES_Encrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen, AES_Sbox_d, AES_ShiftRowTab_d, AES_xtime_d);
 
-
+        /* get the encrypt result */
+        encrypt_result = (BYTE*)malloc(sizeof(BYTE)*pic_len);
+        cudaMemcpy( encrypt_result, pic_d, pic_len*sizeof(BYTE), cudaMemcpyDeviceToHost);
+        printf("%d\n", pic_len);
+        int j = 0;
+        while( j < pic_len){
+            printf("%02x ", (BYTE)encrypt_result[j]);
+            j++;
+            if( !(j%16) ) printf("\n");
+        }
+        cudaFree(pic_d);
+        cudaFree(key_d);
+        cudaFree(AES_Sbox_d);
+        cudaFree(AES_ShiftRowTab_d);
+        cudaFree(AES_Sbox_Inv_d);
+        cudaFree(AES_ShiftRowTab_Inv_d);
+        cudaFree(AES_xtime_d);
     }
 
     // printf("原始訊息："); printBytes(block, 16);
