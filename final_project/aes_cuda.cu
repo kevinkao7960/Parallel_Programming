@@ -289,18 +289,6 @@ int main(int argc, char* argv[]) {
         pic[pic_len-2] = 0;
         pic_len -= 2;
         pic = (BYTE*)realloc(pic, pic_len);
-        printf("%d\n", pic_len);
-
-        // align the last block
-        // int align_num = 0;
-        // if( pic_len % 16 ){
-        //     align_num = 16 - pic_len % 16;
-        //     pic_len += align_num;
-        //     pic = (BYTE*)realloc(pic, pic_len);
-        //     for( int j = 0; j < align_num; j++ ){
-        //         pic[pic_len - j - 1] = 1;
-        //     }
-        // }
 
         // allocate the cuda device space
         BYTE *pic_d, *key_d, *AES_Sbox_d, *AES_ShiftRowTab_d, *AES_Sbox_Inv_d, *AES_ShiftRowTab_Inv_d, *AES_xtime_d, *result;
@@ -334,12 +322,6 @@ int main(int argc, char* argv[]) {
          * Grid Size: BlockNum, 1
          **/
         int blockNum;
-        // if( pic_len % 16 ){
-        //     blockNum = 1 + pic_len / 16;
-        // }
-        // else{
-        //     blockNum = pic_len / 16;
-        // }
         blockNum = pic_len / 16;
         dim3 dimGrid(blockNum, 1);
         dim3 dimBlock(16, 1);
@@ -357,24 +339,12 @@ int main(int argc, char* argv[]) {
         memset( pic_bind_with_header, 0, pic_len + 13);
         cudaMemcpy( result, pic_d, pic_len*sizeof(BYTE), cudaMemcpyDeviceToHost);
 
-        // /* Delete the padding number */
-        // for( int k = 0; k < align_num; k++ ){
-        //     encrypt_result[pic_len - k - 1] = 0;
-        // }
-        // pic_len -= align_num;
-        // encrypt_result = (BYTE*)realloc(encrypt_result, pic_len);
 
         memcpy( pic_bind_with_header, JPEG_HEADER, sizeof(JPEG_HEADER)/sizeof(BYTE));
         memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)], result, pic_len);
         memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)+pic_len], JPEG_TAIL, sizeof(JPEG_TAIL)/sizeof(BYTE));
-        //
-        printf("%d\n", pic_len);
-        int j = 0;
-        while( j < pic_len + 13){
-            printf("%02x ", (BYTE)pic_bind_with_header[j]);
-            j++;
-            if( !(j%16) ) printf("\n");
-        }
+
+
 
         if( !strcmp(mode, "encrypt") ){
             writeFile(pic_bind_with_header, pic_len + 13, "encrypt.jpg");
@@ -391,27 +361,4 @@ int main(int argc, char* argv[]) {
         cudaFree(AES_ShiftRowTab_Inv_d);
         cudaFree(AES_xtime_d);
     }
-
-    // printf("原始訊息："); printBytes(block, 16);
-
-    // BYTE key[16 * (14 + 1)];
-    // int keyLen = 32, maxKeyLen=16 * (14 + 1), blockLen = 16;
-    // for(i = 0; i < keyLen; i++)
-    //     key[i] = i;
-
-    // printf("原始金鑰："); printBytes(key, keyLen);
-
-    // int expandKeyLen = AES_ExpandKey(key, keyLen);
-
-    // printf("展開金鑰："); printBytes(key, expandKeyLen);
-
-    // AES_Encrypt(block, key, expandKeyLen);
-
-    // printf("加密完後："); printBytes(block, blockLen);
-
-    // AES_Decrypt(block, key, expandKeyLen, aes_xtime_d);
-
-    // printf("解密完後："); printBytes(block, blockLen);
-
-    // AES_Done();
 }
