@@ -302,7 +302,7 @@ int main(int argc, char* argv[]) {
         // }
 
         // allocate the cuda device space
-        BYTE *pic_d, *key_d, *AES_Sbox_d, *AES_ShiftRowTab_d, *AES_Sbox_Inv_d, *AES_ShiftRowTab_Inv_d, *AES_xtime_d, *encrypt_result;
+        BYTE *pic_d, *key_d, *AES_Sbox_d, *AES_ShiftRowTab_d, *AES_Sbox_Inv_d, *AES_ShiftRowTab_Inv_d, *AES_xtime_d, *result;
         BYTE key[16 * (14 + 1)];
 
         int keyLen = 32, maxKeyLen=16 * (14 + 1);
@@ -351,10 +351,10 @@ int main(int argc, char* argv[]) {
         }
 
         /* get the encrypt result */
-        encrypt_result = (BYTE*)malloc(sizeof(BYTE)*pic_len);
+        result = (BYTE*)malloc(sizeof(BYTE)*pic_len);
         BYTE *pic_bind_with_header = (BYTE*)malloc(sizeof(BYTE)*(pic_len+13));
         memset( pic_bind_with_header, 0, pic_len + 13);
-        cudaMemcpy( encrypt_result, pic_d, pic_len*sizeof(BYTE), cudaMemcpyDeviceToHost);
+        cudaMemcpy( result, pic_d, pic_len*sizeof(BYTE), cudaMemcpyDeviceToHost);
 
         // /* Delete the padding number */
         // for( int k = 0; k < align_num; k++ ){
@@ -364,7 +364,7 @@ int main(int argc, char* argv[]) {
         // encrypt_result = (BYTE*)realloc(encrypt_result, pic_len);
 
         memcpy( pic_bind_with_header, JPEG_HEADER, sizeof(JPEG_HEADER)/sizeof(BYTE));
-        memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)], encrypt_result, pic_len);
+        memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)], result, pic_len);
         memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)+pic_len], JPEG_TAIL, sizeof(JPEG_TAIL)/sizeof(BYTE));
 
         printf("%d\n", pic_len);
