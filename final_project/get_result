@@ -1,0 +1,11 @@
+#!/bin/bash
+
+rm -f ./output
+
+for x in {1..10}
+do
+    /usr/bin/time -f "real %e user %U sys %S" -a -o ./output $@
+    tail -1 ./output
+done
+
+awk '{ et += $2; ut += $4; st += $6; count++ } END{ printf "Average:\nreal %.3f user %.3f sys %.3f\n", et/count, ut/count, st/count}' ./output
