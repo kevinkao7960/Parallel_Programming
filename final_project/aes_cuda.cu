@@ -268,7 +268,7 @@ int main(int argc, char* argv[]) {
     char mode[200];
     strcpy(input_file, argv[2]);
     strcpy(mode, argv[1]);
-    printf( "%s", argv[2] );
+    // printf( "%s", argv[2] );
     BYTE *pic;
     pic = readFile(input_file);
 
@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
         for( int i = 11; i < pic_len; i++ ){
             pic[i-11] = pic[i];
         }
-        printf("%d\n", pic_len);
+        // printf("%d\n", pic_len);
 
         // delete the last header (2 bytes)
         pic_len -= 11;
@@ -305,14 +305,8 @@ int main(int argc, char* argv[]) {
         cudaMalloc( &key_d, expandKeyLen);
         cudaMemcpy( key_d, key, expandKeyLen*sizeof(BYTE), cudaMemcpyHostToDevice);
 
-        cudaMalloc( &AES_Sbox_d, sizeof(AES_Sbox)/sizeof(BYTE));
-        cudaMemcpy( AES_Sbox_d, AES_Sbox, sizeof(AES_Sbox)/sizeof(BYTE), cudaMemcpyHostToDevice);
-        cudaMalloc( &AES_ShiftRowTab_d, sizeof(AES_ShiftRowTab)/sizeof(BYTE));
-        cudaMemcpy( AES_ShiftRowTab_d, AES_ShiftRowTab, sizeof(AES_ShiftRowTab)/sizeof(BYTE), cudaMemcpyHostToDevice);
-        cudaMalloc( &AES_Sbox_Inv_d, sizeof(AES_Sbox_Inv)/sizeof(BYTE));
-        cudaMemcpy( AES_Sbox_Inv_d, AES_Sbox_Inv, sizeof(AES_Sbox_Inv)/sizeof(BYTE), cudaMemcpyHostToDevice);
-        cudaMalloc( &AES_ShiftRowTab_Inv_d, sizeof(AES_ShiftRowTab_Inv)/sizeof(BYTE));
-        cudaMemcpy( AES_ShiftRowTab_Inv_d, AES_ShiftRowTab_Inv, sizeof(AES_ShiftRowTab_Inv)/sizeof(BYTE), cudaMemcpyHostToDevice);
+
+
         cudaMalloc( &AES_xtime_d, sizeof(AES_xtime)/sizeof(BYTE));
         cudaMemcpy( AES_xtime_d, AES_xtime, sizeof(AES_xtime)/sizeof(BYTE), cudaMemcpyHostToDevice);
 
@@ -327,9 +321,17 @@ int main(int argc, char* argv[]) {
         dim3 dimBlock(16, 1);
 
         if( !strcmp(mode, "encrypt")){
+            cudaMalloc( &AES_Sbox_d, sizeof(AES_Sbox)/sizeof(BYTE));
+            cudaMemcpy( AES_Sbox_d, AES_Sbox, sizeof(AES_Sbox)/sizeof(BYTE), cudaMemcpyHostToDevice);
+            cudaMalloc( &AES_ShiftRowTab_d, sizeof(AES_ShiftRowTab)/sizeof(BYTE));
+            cudaMemcpy( AES_ShiftRowTab_d, AES_ShiftRowTab, sizeof(AES_ShiftRowTab)/sizeof(BYTE), cudaMemcpyHostToDevice);
             AES_Encrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen, AES_Sbox_d, AES_ShiftRowTab_d, AES_xtime_d, blockNum);
         }
         else{
+            cudaMalloc( &AES_Sbox_Inv_d, sizeof(AES_Sbox_Inv)/sizeof(BYTE));
+            cudaMemcpy( AES_Sbox_Inv_d, AES_Sbox_Inv, sizeof(AES_Sbox_Inv)/sizeof(BYTE), cudaMemcpyHostToDevice);
+            cudaMalloc( &AES_ShiftRowTab_Inv_d, sizeof(AES_ShiftRowTab_Inv)/sizeof(BYTE));
+            cudaMemcpy( AES_ShiftRowTab_Inv_d, AES_ShiftRowTab_Inv, sizeof(AES_ShiftRowTab_Inv)/sizeof(BYTE), cudaMemcpyHostToDevice);
             AES_Decrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen, AES_xtime_d, AES_ShiftRowTab_Inv_d, AES_Sbox_Inv_d, blockNum);
         }
 
