@@ -192,16 +192,16 @@ __global__ void AES_Decrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_xtime
             device_block[idx - k*16] = block[idx];
         }
 
-        AES_AddRoundKey(block, &key[l - 16]);
-        AES_ShiftRows(block, aes_shiftrowtab_inv);
-        AES_SubBytes(block, aes_sbox_inv);
+        AES_AddRoundKey(device_block, &key[l - 16]);
+        AES_ShiftRows(device_block, aes_shiftrowtab_inv);
+        AES_SubBytes(device_block, aes_sbox_inv);
         for(i = l - 32; i >= 16; i -= 16) {
-            AES_AddRoundKey(block, &key[i]);
-            AES_MixColumns_Inv(block, aes_xtime);
-            AES_ShiftRows(block, aes_shiftrowtab_inv);
-            AES_SubBytes(block, aes_sbox_inv);
+            AES_AddRoundKey(device_block, &key[i]);
+            AES_MixColumns_Inv(device_block, aes_xtime);
+            AES_ShiftRows(device_block, aes_shiftrowtab_inv);
+            AES_SubBytes(device_block, aes_sbox_inv);
         }
-        AES_AddRoundKey(block, &key[0]);
+        AES_AddRoundKey(device_block, &key[0]);
 
         for( int idx = k*16; idx < k*16+16; idx++ ){
             block[idx] = device_block[idx - k*16];
@@ -271,6 +271,7 @@ int main(int argc, char* argv[]) {
     printf( "%s", argv[2] );
     BYTE *pic;
     pic = readFile(input_file);
+
 
     if( !pic ){
         fprintf(stderr, "Memory creation error");
@@ -366,7 +367,7 @@ int main(int argc, char* argv[]) {
         memcpy( pic_bind_with_header, JPEG_HEADER, sizeof(JPEG_HEADER)/sizeof(BYTE));
         memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)], result, pic_len);
         memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)+pic_len], JPEG_TAIL, sizeof(JPEG_TAIL)/sizeof(BYTE));
-
+        //
         printf("%d\n", pic_len);
         int j = 0;
         while( j < pic_len + 13){
