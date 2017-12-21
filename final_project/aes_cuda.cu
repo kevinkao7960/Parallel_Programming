@@ -15,6 +15,10 @@ void printBytes(BYTE b[], int len) {
 
 /******************************************************************************/
 
+// JPEG header
+BYTE JPEG_HEADER[] = {0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00};
+BYTE JPEG_TAIL[] = {0Xff, 0xd9};
+
 // The following lookup tables and functions are for internal use only!
 BYTE AES_Sbox[] = {99,124,119,123,242,107,111,197,48,1,103,43,254,215,171,
     118,202,130,201,125,250,89,71,240,173,212,162,175,156,164,114,192,183,253,
@@ -145,46 +149,64 @@ int AES_ExpandKey(BYTE key[], int keyLen) {
 }
 
 // AES_Encrypt: encrypt the 16 byte array 'block' with the previously expanded key 'key'.
-__global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_sbox[], BYTE aes_shiftrowtab[], BYTE aes_xtime[]) {
+__global__ void AES_Encrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_sbox[], BYTE aes_shiftrowtab[], BYTE aes_xtime[], int blockNum) {
     int l = keyLen, i;
     int j = threadIdx.x;
     int k = j + blockIdx.x * 16;
 
     BYTE device_block[16];
-    for( int idx = k*16; idx < k*16+16; idx++){
-        device_block[idx - k*16] = block[idx];
-    }
 
-    // printBytes(block, 16);
-    AES_AddRoundKey(device_block, &key[0]);
-    for(i = 16; i < l - 16; i += 16) {
+    if( k < blockNum ){
+        for( int idx = k*16; idx < k*16+16; idx++){
+            device_block[idx - k*16] = block[idx];
+        }
+
+        // printBytes(block, 16);
+        AES_AddRoundKey(device_block, &key[0]);
+        for(i = 16; i < l - 16; i += 16) {
+            AES_SubBytes(device_block, aes_sbox);
+            AES_ShiftRows(device_block, aes_shiftrowtab);
+            AES_MixColumns(device_block, aes_xtime);
+            AES_AddRoundKey(device_block, &key[i]);
+        }
         AES_SubBytes(device_block, aes_sbox);
         AES_ShiftRows(device_block, aes_shiftrowtab);
-        AES_MixColumns(device_block, aes_xtime);
         AES_AddRoundKey(device_block, &key[i]);
-    }
-    AES_SubBytes(device_block, aes_sbox);
-    AES_ShiftRows(device_block, aes_shiftrowtab);
-    AES_AddRoundKey(device_block, &key[i]);
 
-    for( int idx = k*16; idx < k*16+16; idx++ ){
-        block[idx] = device_block[idx - k*16];
+        for( int idx = k*16; idx < k*16+16; idx++ ){
+            block[idx] = device_block[idx - k*16];
+        }
     }
+
 }
 
 // AES_Decrypt: decrypt the 16 byte array 'block' with the previously expanded key 'key'.
-__global__ void AES_Decrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_xtime[],BYTE aes_shiftrowtab_inv[], BYTE aes_sbox_inv[]) {
+__global__ void AES_Decrypt(BYTE block[], BYTE key[], int keyLen, BYTE aes_xtime[],BYTE aes_shiftrowtab_inv[], BYTE aes_sbox_inv[], int blockNum) {
     int l = keyLen, i;
-    AES_AddRoundKey(block, &key[l - 16]);
-    AES_ShiftRows(block, aes_shiftrowtab_inv);
-    AES_SubBytes(block, aes_sbox_inv);
-    for(i = l - 32; i >= 16; i -= 16) {
-        AES_AddRoundKey(block, &key[i]);
-        AES_MixColumns_Inv(block, aes_xtime);
+    int j = threadIdx.x;
+    int k = j + blockIdx.x * 16;
+
+    BYTE device_block[16];
+    if( k < blockNum ){
+        for( int idx = k*16; idx < k*16+16; idx++ ){
+            device_block[idx - k*16] = block[idx];
+        }
+
+        AES_AddRoundKey(block, &key[l - 16]);
         AES_ShiftRows(block, aes_shiftrowtab_inv);
         AES_SubBytes(block, aes_sbox_inv);
+        for(i = l - 32; i >= 16; i -= 16) {
+            AES_AddRoundKey(block, &key[i]);
+            AES_MixColumns_Inv(block, aes_xtime);
+            AES_ShiftRows(block, aes_shiftrowtab_inv);
+            AES_SubBytes(block, aes_sbox_inv);
+        }
+        AES_AddRoundKey(block, &key[0]);
+
+        for( int idx = k*16; idx < k*16+16; idx++ ){
+            block[idx] = device_block[idx - k*16];
+        }
     }
-    AES_AddRoundKey(block, &key[0]);
 }
 
 BYTE* readFile(char *filename){
@@ -220,8 +242,21 @@ BYTE* readFile(char *filename){
     return buffer;
 }
 
+void writeFile( BYTE *pic, int length, char *filename ){
+    FILE *fd;
+
+    fd = fopen(filename, "wb");
+    if( !fd ){
+        fprintf( stderr, "%s: line %d\n", __func__, __LINE__ );
+        fclose(fd);
+        exit(1);
+    }
+    fwrite(pic, 1, length * sizeof(BYTE), fd);
+    fclose(fd);
+}
+
 // ===================== test ============================================
-int main() {
+int main(int argc, char* argv[]) {
     // int i;
     AES_Init();
 
@@ -229,8 +264,13 @@ int main() {
     // for(i = 0; i < 16; i++)
     //     block[i] = 0x11 * i;
 
+    char input_file[200];
+    char mode[200];
+    strcpy(input_file, argv[2]);
+    strcpy(mode, argv[1]);
+    printf( "%s", argv[2] );
     BYTE *pic;
-    pic = readFile("minions.jpg");
+    pic = readFile(input_file);
 
     if( !pic ){
         fprintf(stderr, "Memory creation error");
@@ -241,6 +281,7 @@ int main() {
             pic[i-11] = pic[i];
         }
         printf("%d\n", pic_len);
+
         // delete the last header (2 bytes)
         pic_len -= 11;
         pic[pic_len-1] = 0;
@@ -250,16 +291,15 @@ int main() {
         printf("%d\n", pic_len);
 
         // align the last block
+        // int align_num = 0;
         // if( pic_len % 16 ){
-        //     int align_num = 16 - pic_len % 16;
+        //     align_num = 16 - pic_len % 16;
         //     pic_len += align_num;
         //     pic = (BYTE*)realloc(pic, pic_len);
         //     for( int j = 0; j < align_num; j++ ){
         //         pic[pic_len - j - 1] = 1;
         //     }
         // }
-
-
 
         // allocate the cuda device space
         BYTE *pic_d, *key_d, *AES_Sbox_d, *AES_ShiftRowTab_d, *AES_Sbox_Inv_d, *AES_ShiftRowTab_Inv_d, *AES_xtime_d, *encrypt_result;
@@ -293,28 +333,55 @@ int main() {
          * Grid Size: BlockNum, 1
          **/
         int blockNum;
-        if( pic_len % 16 ){
-            blockNum = 1 + pic_len / 16;
-        }
-        else{
-            blockNum = pic_len / 16;
-        }
-
+        // if( pic_len % 16 ){
+        //     blockNum = 1 + pic_len / 16;
+        // }
+        // else{
+        //     blockNum = pic_len / 16;
+        // }
+        blockNum = pic_len / 16;
         dim3 dimGrid(blockNum, 1);
         dim3 dimBlock(16, 1);
 
-        AES_Encrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen, AES_Sbox_d, AES_ShiftRowTab_d, AES_xtime_d);
+        if( !strcmp(mode, "encrypt")){
+            AES_Encrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen, AES_Sbox_d, AES_ShiftRowTab_d, AES_xtime_d, blockNum);
+        }
+        else{
+            AES_Decrypt<<<dimGrid, dimBlock>>>(pic_d, key_d, expandKeyLen, AES_xtime_d, AES_ShiftRowTab_Inv_d, AES_Sbox_Inv_d, blockNum);
+        }
 
         /* get the encrypt result */
         encrypt_result = (BYTE*)malloc(sizeof(BYTE)*pic_len);
+        BYTE *pic_bind_with_header = (BYTE*)malloc(sizeof(BYTE)*(pic_len+13));
+        memset( pic_bind_with_header, 0, pic_len + 13);
         cudaMemcpy( encrypt_result, pic_d, pic_len*sizeof(BYTE), cudaMemcpyDeviceToHost);
+
+        // /* Delete the padding number */
+        // for( int k = 0; k < align_num; k++ ){
+        //     encrypt_result[pic_len - k - 1] = 0;
+        // }
+        // pic_len -= align_num;
+        // encrypt_result = (BYTE*)realloc(encrypt_result, pic_len);
+
+        memcpy( pic_bind_with_header, JPEG_HEADER, sizeof(JPEG_HEADER)/sizeof(BYTE));
+        memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)], encrypt_result, pic_len);
+        memcpy( &pic_bind_with_header[sizeof(JPEG_HEADER)/sizeof(BYTE)+pic_len], JPEG_TAIL, sizeof(JPEG_TAIL)/sizeof(BYTE));
+
         printf("%d\n", pic_len);
         int j = 0;
-        while( j < pic_len){
-            printf("%02x ", (BYTE)encrypt_result[j]);
+        while( j < pic_len + 13){
+            printf("%02x ", (BYTE)pic_bind_with_header[j]);
             j++;
             if( !(j%16) ) printf("\n");
         }
+
+        if( !strcmp(mode, "encrypt") ){
+            writeFile(pic_bind_with_header, pic_len + 13, "encrypt.jpg");
+        }
+        else{
+            writeFile(pic_bind_with_header, pic_len + 13, "decrypt.jpg");
+        }
+
         cudaFree(pic_d);
         cudaFree(key_d);
         cudaFree(AES_Sbox_d);
