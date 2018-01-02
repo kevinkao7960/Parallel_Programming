@@ -109,7 +109,11 @@ int main(int argc, char const *argv[])
 	}
 	max_items = max_work[0]*max_work[1]*max_work[2];
 	total_tasks = input_size / 3;
-	task_per_thread = total_tasks / max_items + 1;
+
+	task_per_thread = total_tasks / max_items;
+	if( total_tasks % max_items != 0 ){
+		task_per_thread++;
+	}
 
 	/* Create OpenCL context */
 	context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret );
