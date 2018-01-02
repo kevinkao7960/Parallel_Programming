@@ -65,7 +65,7 @@ int main(int argc, char const *argv[])
 	size_t source_size;
 
 	/* Load the source code containing the kernel function */
-	fp = fopen( filename, "r" );
+	fp = fopen( fileName, "r" );
 	if(!fp){
 		fprintf( stderr, "Load kernel function error!\n");
 		exit(1);
@@ -116,7 +116,10 @@ int main(int argc, char const *argv[])
 
 	/* Create command queue */
 	command_queue = clCreateCommandQueue( context, device_id, 0, &ret );
-
+	if( !command_queue ){
+		printf("clCreateCommandQueue(): %d\n", ret );
+		return EXIT_FAILURE;
+	}
 	/**
 	 * Create OpenCL buffer
 	 * read-only: input data
@@ -134,7 +137,7 @@ int main(int argc, char const *argv[])
 	ret = clEnqueueWriteBuffer( command_queue, input, CL_TRUE, 0, input_size * sizeof(unsigned int), image, 0, NULL, NULL );
 
 	/* Create Kernel program from the source */
-	program = clCreateProgramWithSource( context, 1, (const char **)&source_ptr, (const size_t*)&source_size, &ret );
+	program = clCreateProgramWithSource( context, 1, (const char **)&source_str, (const size_t*)&source_size, &ret );
 
 	/* Build Kernel Program */
 	ret = clBuildProgram( program, 1, &device_id, NULL, NULL, NULL );
