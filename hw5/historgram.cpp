@@ -4,6 +4,8 @@
 #include <fstream>
 #include <iostream>
 
+#include <CL/cl.h>
+
 unsigned int * histogram(unsigned int *image_data, unsigned int _size) {
 
 	unsigned int *img = image_data;
@@ -46,13 +48,42 @@ int main(int argc, char const *argv[])
 	unsigned int * histogram_results;
 	unsigned int i=0, a, input_size;
 	std::fstream inFile("input", std::ios_base::in);
-	std::ofstream outFile("xxxxxx.out", std::ios_base::out);
+	std::ofstream outFile("0556045.out", std::ios_base::out);
 
 	inFile >> input_size;
 	unsigned int *image = new unsigned int[input_size];
 	while( inFile >> a ) {
 		image[i++] = a;
 	}
+
+	/* Read Source File */
+
+
+
+	/* Setting OpenCL kernel environments */
+	cl_platform_id platform_id = NULL;
+	cl_device_id device_id = NULL;
+	cl_context context = NULL;
+	
+	cl_uint ret_num_platforms;
+	cl_uint ret_num_devices;
+	cl_int ret;
+
+	/* Get platform and device info */
+	ret = clGetPlatformIDs( 1, &platform_id, &ret_num_platforms );
+	ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id , &ret_num_devices );
+	if (ret != CL_SUCCESS) {
+    	printf("clGetDeviceIDs(): %d\n", ret);
+    	return EXIT_FAILURE;
+  	}
+
+	/* Create OpenCL context */
+	context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret );
+
+
+
+
+
 
 	histogram_results = histogram(image, input_size);
 	for(unsigned int i = 0; i < 256 * 3; ++i) {
