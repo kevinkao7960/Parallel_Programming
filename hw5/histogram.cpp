@@ -3,51 +3,19 @@
 #include "string.h"
 #include <fstream>
 #include <iostream>
+#include <vector>
+#include <cstring>
 
 #include <CL/cl.h>
-
 #define MAX_SOURCE_SIZE (0x100000)
 
-// unsigned int * histogram(unsigned int *image_data, unsigned int _size) {
+using namespace std;
 
-// 	unsigned int *img = image_data;
-// 	unsigned int *ref_histogram_results;
-// 	unsigned int *ptr;
-
-// 	ref_histogram_results = (unsigned int *)malloc(256 * 3 * sizeof(unsigned int));
-// 	ptr = ref_histogram_results;
-// 	memset (ref_histogram_results, 0x0, 256 * 3 * sizeof(unsigned int));
-
-// 	// histogram of R
-// 	for (unsigned int i = 0; i < _size; i += 3)
-// 	{
-// 		unsigned int index = img[i];
-// 		ptr[index]++;
-// 	}
-
-// 	// histogram of G
-// 	ptr += 256;
-// 	for (unsigned int i = 1; i < _size; i += 3)
-// 	{
-// 		unsigned int index = img[i];
-// 		ptr[index]++;
-// 	}
-
-// 	// histogram of B
-// 	ptr += 256;
-// 	for (unsigned int i = 2; i < _size; i += 3)
-// 	{
-// 		unsigned int index = img[i];
-// 		ptr[index]++;
-// 	}
-
-// 	return ref_histogram_results;
-// }
 
 int main(int argc, char const *argv[])
 {
 
-	unsigned int * histogram_results;
+	unsigned int histogram_results[256*3];
 	unsigned int i=0, a, input_size;
 	std::fstream inFile("input", std::ios_base::in);
 	std::ofstream outFile("0556045.out", std::ios_base::out);
@@ -60,7 +28,8 @@ int main(int argc, char const *argv[])
 
 	/* Read Source File */
 	FILE *fp;
-	char fileName[] = "./histogram.cl";
+	const char *fileName = "./histogram.cl";
+	
 	char *source_str;
 	size_t source_size;
 
@@ -70,8 +39,13 @@ int main(int argc, char const *argv[])
 		fprintf( stderr, "Load kernel function error!\n");
 		exit(1);
 	}
-	source_str = (char*)malloc( MAX_SOURCE_SIZE*sizeof(char) );
-	source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+
+	fseek( fp, 0, SEEK_END );
+	source_size = ftell(fp);
+	fseek( fp, 0, SEEK_SET );
+
+	source_str = (char*)malloc( source_size*sizeof(char) );
+	fread(source_str, 1, source_size, fp);
 	fclose(fp);
 
 	/* Setting OpenCL kernel environments */
@@ -110,13 +84,16 @@ int main(int argc, char const *argv[])
 	max_items = max_work[0]*max_work[1]*max_work[2];
 	total_tasks = input_size / 3;
 
-	task_per_thread = total_tasks / max_items;
-	if( total_tasks % max_items != 0 ){
-		task_per_thread++;
-	}
+	task_per_thread = total_tasks / max_items + 1;
+	
 
 	/* Create OpenCL context */
 	context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret );
+	if( ret != CL_SUCCESS ){
+		printf("clCreateContext(): %d\n", ret );
+		return EXIT_FAILURE;
+	}
+
 
 	/* Create command queue */
 	command_queue = clCreateCommandQueue( context, device_id, 0, &ret );
@@ -139,12 +116,24 @@ int main(int argc, char const *argv[])
   	}
 	/* Copy input data into the memory buffer */
 	ret = clEnqueueWriteBuffer( command_queue, input, CL_TRUE, 0, input_size * sizeof(unsigned int), image, 0, NULL, NULL );
+	if( ret != CL_SUCCESS ){
+		printf( "ERROR: clEnqueueWriteBuffer(): %d\n", ret );
+		return EXIT_FAILURE;
+	}
 
 	/* Create Kernel program from the source */
-	program = clCreateProgramWithSource( context, 1, (const char **)&source_str, (const size_t*)&source_size, &ret );
+	program = clCreateProgramWithSource( context, 1, (const char**)&source_str, 0, &ret );
+	if( program == 0 || ret != CL_SUCCESS ){
+		printf( "ERROR: clCreateProgramWithSource(): %d\n", ret );
+		return EXIT_FAILURE;
+	}
 
 	/* Build Kernel Program */
-	ret = clBuildProgram( program, 1, &device_id, NULL, NULL, NULL );
+	ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
+	if( ret != CL_SUCCESS ){
+		printf( "ERROR: clBuildProgram(): %d\n", ret );
+		return EXIT_FAILURE;
+	}
 
 	/* Create OpenCL Kernel */
 	kernel = clCreateKernel( program, "histogram", &ret );
@@ -180,13 +169,13 @@ int main(int argc, char const *argv[])
 		return EXIT_FAILURE;
 	}
 	clFinish( command_queue );
-
 	/* Read the result from the device */
 	ret = clEnqueueReadBuffer( command_queue, output, CL_TRUE, 0, 256*3*sizeof(unsigned int), histogram_results, 0, NULL, NULL );
 	if( ret != CL_SUCCESS ){
 		printf( "clEnqueueReadBuffer(): %d\n", ret );
 		return EXIT_FAILURE;
 	}
+	
 
 	// histogram_results = histogram(image, input_size);
 	for(unsigned int i = 0; i < 256 * 3; ++i) {
@@ -194,6 +183,8 @@ int main(int argc, char const *argv[])
 			outFile << std::endl;
 		outFile << histogram_results[i]<< ' ';
 	}
+
+
 
 	inFile.close();
 	outFile.close();

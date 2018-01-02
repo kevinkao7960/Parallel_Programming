@@ -1,4 +1,4 @@
-__kernel void histogram( __global unsigned int *image_data, __global unsigned int* histogram_results, unsigned int total_tasks, unsigned int task_per_thread) {
+__kernel void histogram( __global unsigned int *image_data, __global unsigned int* histogram_results, unsigned int total_tasks, unsigned int task_per_thread){
     int global_id = get_global_id(0);
     size_t width = get_global_size(0);
 
@@ -10,7 +10,7 @@ __kernel void histogram( __global unsigned int *image_data, __global unsigned in
         if( (global_id + i * width) < total_tasks ){
             for( unsigned int j = 0; j < 3; j++ ){
                 unsigned int index = image_data[(global_id + (i * width)) * 3 + j];
-                atomic_inc(&results[index + j * 256]);
+                atomic_inc(&histogram_results[index + j * 256]);
             }
         }
     }
