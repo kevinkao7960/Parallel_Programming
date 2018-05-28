@@ -1,6 +1,11 @@
 #!/bin/bash
 
-rm -f ./output
+file = ./output
+
+if [ -e "$file" ]
+then
+    rm -f ./output
+fi
 
 for x in {1..10}
 do
